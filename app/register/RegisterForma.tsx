@@ -1,20 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { DarbaTips, Regions } from '@/lib/supabase'
-import { CheckCircle2 } from 'lucide-react'
 
 type Props = {
   darbaTipi: DarbaTips[]
   regioni: Regions[]
 }
 
-type State = 'idle' | 'loading' | 'success' | 'error'
+type State = 'idle' | 'loading' | 'error'
 
 const inputClass = "w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
 const labelClass = "block text-sm font-semibold text-foreground mb-1.5"
 
 export default function RegisterForma({ darbaTipi, regioni }: Props) {
+  const router = useRouter()
   const [vards, setVards] = useState('')
   const [uzvards, setUzvards] = useState('')
   const [epasts, setEpasts] = useState('')
@@ -56,25 +57,11 @@ export default function RegisterForma({ darbaTipi, regioni }: Props) {
     const data = await res.json()
 
     if (res.ok) {
-      setState('success')
+      router.push('/register/paldies')
     } else {
       setErrorMsg(data.error ?? 'Kļūda. Mēģiniet vēlreiz.')
       setState('error')
     }
-  }
-
-  if (state === 'success') {
-    return (
-      <div className="rounded-2xl bg-white border border-border p-10 text-center">
-        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-brand-soft text-brand mb-5">
-          <CheckCircle2 className="h-8 w-8" />
-        </div>
-        <h2 className="text-xl font-bold text-foreground">Pieteikums saņemts!</h2>
-        <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-          Jūsu profils tiek pārskatīts. Kad tas būs apstiprināts, jūs saņemsiet e-pastu un varēsiet pierakstīties.
-        </p>
-      </div>
-    )
   }
 
   return (

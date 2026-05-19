@@ -34,13 +34,19 @@ export default async function MeistarsPage(props: {
   ])
 
   const darbaTypsId = darbaTypi?.[0]?.darba_tips_id ?? null
-  const { data: katalogs } = darbaTypsId
-    ? await supabase
-        .from('pakalpojumu_kategorijas')
-        .select('id, nosaukums, kartiba, standartu_pakalpojumi(nosaukums, kartiba)')
-        .eq('darba_tips_id', darbaTypsId)
-        .order('kartiba')
-    : { data: null }
+  const [{ data: katalogs }, { data: meistaraPakRaw }] = await Promise.all([
+    darbaTypsId
+      ? supabase
+          .from('pakalpojumu_kategorijas')
+          .select('id, nosaukums, kartiba, standartu_pakalpojumi(nosaukums, kartiba)')
+          .eq('darba_tips_id', darbaTypsId)
+          .order('kartiba')
+      : Promise.resolve({ data: null }),
+    supabase
+      .from('meistara_pakalpojumi')
+      .select('cena_no, cena_lidz, apraksts, standartu_pakalpojumi(nosaukums, kartiba, pakalpojumu_kategorijas(nosaukums, kartiba))')
+      .eq('meistars_id', meistars.id),
+  ])
 
   type KatalogaRinda = {
     id: string
@@ -49,6 +55,29 @@ export default async function MeistarsPage(props: {
     standartu_pakalpojumi: Array<{ nosaukums: string; kartiba: number | null }>
   }
   const katalogaKategorijas = (katalogs ?? []) as KatalogaRinda[]
+
+  type MeistaraPakItem = {
+    cena_no: number | null
+    cena_lidz: number | null
+    apraksts: string | null
+    standartu_pakalpojumi: {
+      nosaukums: string
+      kartiba: number | null
+      pakalpojumu_kategorijas: { nosaukums: string; kartiba: number | null } | null
+    } | null
+  }
+  const meistaraPak = (meistaraPakRaw ?? []) as MeistaraPakItem[]
+
+  const meistaraPakByKat = meistaraPak.reduce<
+    Record<string, { katNosaukums: string; katKartiba: number; items: MeistaraPakItem[] }>
+  >((acc, row) => {
+    const kat = row.standartu_pakalpojumi?.pakalpojumu_kategorijas
+    const key = kat?.nosaukums ?? 'Citi'
+    if (!acc[key]) acc[key] = { katNosaukums: key, katKartiba: kat?.kartiba ?? 99, items: [] }
+    acc[key].items.push(row)
+    return acc
+  }, {})
+  const meistaraPakKategorijas = Object.values(meistaraPakByKat).sort((a, b) => a.katKartiba - b.katKartiba)
 
   const pilnaisVards = `${meistars.vards} ${meistars.uzvards}`
   const regioniNosaukumi = (regioni ?? []).map((r: { regioni: { nosaukums: string }[] | { nosaukums: string } | null }) => {
@@ -171,8 +200,50 @@ export default async function MeistarsPage(props: {
         </div>
       </section>
 
-      {/* Pakalpojumu katalogs */}
-      {katalogaKategorijas.length > 0 && (
+      {/* Ko es daru — meistara izvēlētie pakalpojumi ar cenām */}
+      {meistaraPakKategorijas.length > 0 ? (
+        <section id="pakalpojumi" className="py-20 bg-background">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="reveal text-center max-w-2xl mx-auto mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold">Ko es daru</h2>
+              <p className="mt-3 text-muted-foreground">Pakalpojumi, ko piedāvā {pilnaisVards}.</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-5">
+              {meistaraPakKategorijas.map((kat) => (
+                <div key={kat.katNosaukums} className="reveal rounded-2xl overflow-hidden border border-border">
+                  <div className="bg-secondary px-5 py-3">
+                    <h3 className="font-bold text-foreground">{kat.katNosaukums}</h3>
+                  </div>
+                  <div className="bg-white divide-y divide-border">
+                    {kat.items.map((item, i) => (
+                      <div key={i} className="flex items-start justify-between gap-3 px-5 py-3">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <span className="text-sm">{item.standartu_pakalpojumi?.nosaukums}</span>
+                            {item.apraksts && (
+                              <p className="text-xs text-muted-foreground mt-0.5">{item.apraksts}</p>
+                            )}
+                          </div>
+                        </div>
+                        {(item.cena_no || item.cena_lidz) && (
+                          <span className="text-sm font-semibold text-brand whitespace-nowrap flex-shrink-0">
+                            {item.cena_no && item.cena_lidz
+                              ? `${item.cena_no}–${item.cena_lidz}€`
+                              : item.cena_no
+                              ? `no ${item.cena_no}€`
+                              : `līdz ${item.cena_lidz}€`}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : katalogaKategorijas.length > 0 && (
         <section id="pakalpojumi" className="py-20 bg-background">
           <div className="mx-auto max-w-6xl px-4">
             <div className="reveal text-center max-w-2xl mx-auto mb-12">
