@@ -5,10 +5,7 @@ import type { NextRequest } from 'next/server'
 
 function err(step: string, detail: unknown, status: number, msg: string) {
   console.error(JSON.stringify({ step, detail: String(detail), status }))
-  return NextResponse.json({ error: msg }, {
-    status,
-    headers: { 'X-Register-Error': `${step}: ${String(detail)}` },
-  })
+  return NextResponse.json({ error: msg, debug: `${step}: ${String(detail)}` }, { status })
 }
 
 export async function POST(request: NextRequest) {
