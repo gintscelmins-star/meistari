@@ -42,24 +42,29 @@ export default function RegisterForma({ darbaTipi, regioni }: Props) {
     setState('loading')
     setErrorMsg('')
 
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vards, uzvards, epasts, parole, specialitate,
-        telefons, pilseta,
-        pieredze_gadi: pieredzeGadi || '0',
-        darba_tipi_ids: selectedDarbaTipi,
-        regioni_ids: selectedRegioni,
-      }),
-    })
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vards, uzvards, epasts, parole, specialitate,
+          telefons, pilseta,
+          pieredze_gadi: pieredzeGadi || '0',
+          darba_tipi_ids: selectedDarbaTipi,
+          regioni_ids: selectedRegioni,
+        }),
+      })
 
-    const data = await res.json()
+      const data = await res.json().catch(() => ({}))
 
-    if (res.ok) {
-      router.push('/register/paldies')
-    } else {
-      setErrorMsg(data.error ?? 'Kļūda. Mēģiniet vēlreiz.')
+      if (res.ok) {
+        router.push('/register/paldies')
+      } else {
+        setErrorMsg((data as { error?: string }).error ?? 'Kļūda. Mēģiniet vēlreiz.')
+        setState('error')
+      }
+    } catch {
+      setErrorMsg('Savienojuma kļūda. Mēģiniet vēlreiz.')
       setState('error')
     }
   }

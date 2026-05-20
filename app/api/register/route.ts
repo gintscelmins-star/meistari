@@ -1,5 +1,6 @@
 import { getSupabaseServer } from '@/lib/supabase'
 import { slugify } from '@/lib/slugify'
+import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!vards || !uzvards || !epasts || !parole || !specialitate || !telefons) {
-      return Response.json({ error: 'Trūkst obligātie lauki' }, { status: 400 })
+      return NextResponse.json({ error: 'Trūkst obligātie lauki' }, { status: 400 })
     }
 
     const supabase = getSupabaseServer()
@@ -24,9 +25,9 @@ export async function POST(request: NextRequest) {
       email_confirm: true,
     })
 
-    if (authError || !authData.user) {
+    if (authError || !authData?.user) {
       const msg = authError?.message ?? 'Neizdevās izveidot kontu'
-      return Response.json({ error: msg }, { status: 400 })
+      return NextResponse.json({ error: msg }, { status: 400 })
     }
 
     // 2. Ģenerē unikālu slug
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (meistarsError || !meistars) {
       // Atsauc Auth lietotāju ja DB insert neizdevās
       await supabase.auth.admin.deleteUser(authData.user.id)
-      return Response.json({ error: 'Neizdevās izveidot profilu' }, { status: 500 })
+      return NextResponse.json({ error: 'Neizdevās izveidot profilu' }, { status: 500 })
     }
 
     // 4. Izveido darba_tipi saites
@@ -89,8 +90,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return Response.json({ success: true }, { status: 201 })
-  } catch {
-    return Response.json({ error: 'Iekšēja servera kļūda' }, { status: 500 })
+    return NextResponse.json({ success: true }, { status: 201 })
+  } catch (err) {
+    console.error('[register]', err)
+    return NextResponse.json({ error: 'Iekšēja servera kļūda' }, { status: 500 })
   }
 }
