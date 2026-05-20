@@ -19,7 +19,11 @@ export async function POST(request: NextRequest) {
       vards, uzvards, epasts, parole, specialitate,
       telefons, pilseta, pieredze_gadi,
       darba_tipi_ids, regioni_ids,
-    } = body as Record<string, string | string[]>
+    } = body as {
+      vards: string; uzvards: string; epasts: string; parole: string
+      specialitate: string; telefons: string; pilseta?: string
+      pieredze_gadi?: string; darba_tipi_ids: string[]; regioni_ids: string[]
+    }
 
     console.log('[register] Fields received:', {
       vards: !!vards,
