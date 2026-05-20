@@ -34,6 +34,7 @@ export default async function KalendarsPage(props: {
     meistars_not_found: 'Profils nav atrasts.',
     db_error: 'Neizdevās saglabāt datus.',
     token_exchange: 'Kļūda autorizācijā.',
+    not_configured: 'Google Calendar integrācija vēl nav pieejama.',
   }
 
   return (
@@ -112,13 +113,11 @@ export default async function KalendarsPage(props: {
                 </li>
               ))}
             </ul>
-            <a
-              href="/api/calendar/auth"
-              className="inline-flex items-center gap-2 rounded-full bg-brand text-brand-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
-            >
+            <div className="inline-flex items-center gap-2 rounded-full bg-secondary text-muted-foreground px-5 py-2.5 text-sm font-semibold cursor-not-allowed select-none">
               <Calendar className="h-4 w-4" />
               Savienot Google Calendar
-            </a>
+              <span className="rounded-full bg-amber-100 text-amber-700 text-xs px-2 py-0.5">Drīzumā</span>
+            </div>
           </div>
         )}
       </div>
