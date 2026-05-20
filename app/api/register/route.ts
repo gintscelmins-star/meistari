@@ -111,18 +111,22 @@ export async function POST(request: NextRequest) {
     if (regErr) console.error(JSON.stringify({ step: 'regioni', detail: regErr.message }))
   }
 
-  // 9. Save pakalpojumi
+  // 9. Save pakalpojumi — look up standartu_pakalpojums_id by name
   if (Array.isArray(pakalpojumi) && pakalpojumi.length > 0) {
-    const { error: pakErr } = await supabase.from('meistars_pakalpojumi').insert(
-      pakalpojumi.map(p => ({
-        meistars_id: meistars.id,
-        pakalpojums_lv: p.lv,
-        pakalpojums_ru: p.ru,
-        kategorija: p.kategorija_lv,
-        apakskategorija: p.apakskategorija_lv,
-      }))
-    )
-    if (pakErr) console.error(JSON.stringify({ step: 'pakalpojumi', detail: pakErr.message }))
+    const { data: stdPak } = await supabase
+      .from('standartu_pakalpojumi')
+      .select('id, nosaukums')
+      .in('nosaukums', pakalpojumi.map(p => p.lv))
+    if (stdPak && stdPak.length > 0) {
+      const nameToId: Record<string, string> = Object.fromEntries(stdPak.map((s: { id: string; nosaukums: string }) => [s.nosaukums, s.id]))
+      const rows = pakalpojumi
+        .filter(p => nameToId[p.lv])
+        .map(p => ({ meistars_id: meistars.id, standartu_pakalpojums_id: nameToId[p.lv] }))
+      if (rows.length > 0) {
+        const { error: pakErr } = await supabase.from('meistara_pakalpojumi').insert(rows)
+        if (pakErr) console.error(JSON.stringify({ step: 'pakalpojumi', detail: pakErr.message }))
+      }
+    }
   }
 
   // 10. Save darba laiki
