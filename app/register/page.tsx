@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getSupabaseServer } from '@/lib/supabase'
 import Link from 'next/link'
 import { Wrench } from 'lucide-react'
