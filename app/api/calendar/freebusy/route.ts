@@ -1,8 +1,17 @@
 import { getSupabaseServer } from '@/lib/supabase'
 import { getFreeBusy } from '@/lib/google-calendar'
+import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
+  if (!rateLimit(request)) {
+    return NextResponse.json(
+      { error: 'Pārāk daudz pieprasījumu' },
+      { status: 429 }
+    )
+  }
+
   const { searchParams } = request.nextUrl
   const meistarsId = searchParams.get('meistars_id')
   const datums = searchParams.get('datums') // YYYY-MM-DD

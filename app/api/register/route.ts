@@ -2,6 +2,7 @@ import { getSupabaseServer } from '@/lib/supabase'
 import { slugify } from '@/lib/slugify'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 type PakalpojumsEntry = {
   lv: string
@@ -20,6 +21,13 @@ function err(step: string, detail: unknown, status: number, msg: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!rateLimit(request)) {
+    return NextResponse.json(
+      { error: 'Pārāk daudz pieprasījumu' },
+      { status: 429 }
+    )
+  }
+
   // 1. Parse body
   let body: {
     vards: string; uzvards: string; epasts: string; parole: string

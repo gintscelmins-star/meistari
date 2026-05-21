@@ -1,7 +1,16 @@
 import { getSupabaseServer } from '@/lib/supabase'
+import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  if (!rateLimit(request)) {
+    return NextResponse.json(
+      { error: 'Pārāk daudz pieprasījumu' },
+      { status: 429 }
+    )
+  }
+
   try {
     const body = await request.json()
     const { meistars_id, klients_vards, klients_telefons, pakalpojums, datums, laiks } = body
