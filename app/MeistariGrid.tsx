@@ -294,12 +294,12 @@ export default function MeistariGrid({ valoda }: Props) {
                   </div>
 
                   {/* CTA */}
-                  <a
+                  <Link
                     href={m.subdomens}
                     className="mt-4 block w-full text-center rounded-full border border-blue-600 text-blue-600 text-sm font-semibold py-2 hover:bg-blue-600 hover:text-white transition-colors"
                   >
                     {txt.profile[valoda]}
-                  </a>
+                  </Link>
                 </div>
               )
             })}
