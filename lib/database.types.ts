@@ -105,6 +105,18 @@ export type Database = {
         Update: { id?: string; kartiba?: number | null; kategorija_id?: string | null; nosaukums?: string }
         Relationships: [{ foreignKeyName: "standartu_pakalpojumi_kategorija_id_fkey"; columns: ["kategorija_id"]; isOneToOne: false; referencedRelation: "pakalpojumu_kategorijas"; referencedColumns: ["id"] }]
       }
+      zinojumi: {
+        Row: { id: string; prospect_id: string; teksts: string | null; izveidots_at: string | null }
+        Insert: { id?: string; prospect_id: string; teksts?: string | null; izveidots_at?: string | null }
+        Update: { id?: string; prospect_id?: string; teksts?: string | null; izveidots_at?: string | null }
+        Relationships: []
+      }
+      prospects: {
+        Row: { id: string; vards: string; uzvards: string; telefons: string; ss_url: string | null; piezimes: string | null; gdpr_piekrits: boolean; gdpr_datums: string | null; dzesanas_pieprasits: boolean; dzesanas_datums: string | null; updated_at: string | null; created_at: string | null }
+        Insert: { id?: string; vards: string; uzvards: string; telefons: string; ss_url?: string | null; piezimes?: string | null; gdpr_piekrits?: boolean; gdpr_datums?: string | null; dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null; updated_at?: string | null; created_at?: string | null }
+        Update: { id?: string; vards?: string; uzvards?: string; telefons?: string; ss_url?: string | null; piezimes?: string | null; gdpr_piekrits?: boolean; gdpr_datums?: string | null; dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null; updated_at?: string | null; created_at?: string | null }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: { [_ in never]: never }
