@@ -7,7 +7,9 @@ export function rateLimit(
   maxRequests = 100,
   windowMs = 60000
 ): boolean {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const ip = req.headers.get('x-forwarded-for') ??
+             req.headers.get('x-real-ip') ??
+             'unknown'
   const now = Date.now()
   const windowStart = now - windowMs
 
