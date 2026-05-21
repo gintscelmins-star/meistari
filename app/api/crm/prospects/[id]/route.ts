@@ -9,6 +9,29 @@ const VALID_STATUSI = ['jauns', 'nosutits', 'atbildeja', 'demo_nosutits', 'maksa
 type ProspectUpdate = Database['public']['Tables']['prospects']['Update']
 type Params = { params: Promise<{ id: string }> }
 
+export async function GET(req: NextRequest, { params }: Params) {
+  if (!rateLimit(req)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
+  const supabaseSSR = await getSupabaseSSR()
+  const { data: { user } } = await supabaseSSR.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const supabase = getSupabaseServer()
+
+  const { data, error } = await supabase
+    .from('prospects')
+    .select('id, vards, uzvards, telefons, whatsapp, valoda, statuss, regions, demo_url, piezimes, created_at')
+    .eq('id', id)
+    .single()
+
+  if (error || !data) return NextResponse.json({ error: 'Nav atrasts' }, { status: 404 })
+
+  return NextResponse.json(data)
+}
+
 export async function PATCH(req: NextRequest, { params }: Params) {
   if (!rateLimit(req)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
