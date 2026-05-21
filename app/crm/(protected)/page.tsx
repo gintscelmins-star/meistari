@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
+
+type SendState = 'idle' | 'loading' | 'ok' | 'err'
 
 type Prospect = {
   id: string
@@ -57,6 +60,7 @@ export default function CrmPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [sendStates, setSendStates] = useState<Record<string, { sms: SendState; wa: SendState }>>({})
 
   const fetchProspects = useCallback(async () => {
     setLoading(true)
@@ -89,6 +93,31 @@ export default function CrmPage() {
     })
     setProspects(prev => prev.map(p => p.id === id ? { ...p, statuss } : p))
     setUpdatingId(null)
+  }
+
+  async function sendMessage(prospectId: string, kanals: 'sms' | 'wa') {
+    setSendStates(prev => ({
+      ...prev,
+      [prospectId]: { ...prev[prospectId] ?? { sms: 'idle', wa: 'idle' }, [kanals]: 'loading' },
+    }))
+    const endpoint = kanals === 'sms' ? '/api/crm/send-sms' : '/api/crm/send-whatsapp'
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prospect_id: prospectId }),
+    })
+    const next: SendState = res.ok ? 'ok' : 'err'
+    setSendStates(prev => ({
+      ...prev,
+      [prospectId]: { ...prev[prospectId] ?? { sms: 'idle', wa: 'idle' }, [kanals]: next },
+    }))
+    if (res.ok) {
+      setProspects(prev => prev.map(p => p.id === prospectId ? { ...p, statuss: 'nosutits' } : p))
+      setTimeout(() => setSendStates(prev => ({
+        ...prev,
+        [prospectId]: { ...prev[prospectId] ?? { sms: 'idle', wa: 'idle' }, [kanals]: 'idle' },
+      })), 3000)
+    }
   }
 
   async function deleteProspect(id: string) {
@@ -174,7 +203,9 @@ export default function CrmPage() {
               {prospects.map(p => (
                 <tr key={p.id} className="hover:bg-gray-50 transition">
                   <td className="px-4 py-3 font-medium text-gray-900">
-                    {p.vards} {p.uzvards}
+                    <Link href={`/crm/prospects/${p.id}`} className="hover:underline">
+                      {p.vards} {p.uzvards}
+                    </Link>
                     {p.piezimes && (
                       <span className="ml-2 text-xs text-gray-400" title={p.piezimes}>📝</span>
                     )}
@@ -212,23 +243,50 @@ export default function CrmPage() {
                   <td className="px-4 py-3 text-gray-400 text-xs">
                     {p.created_at ? new Date(p.created_at).toLocaleDateString('lv') : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    {p.demo_url && (
-                      <a
-                        href={p.demo_url}
-                        target="_blank"
-                        rel="noopener"
-                        className="text-xs text-purple-600 hover:underline mr-3"
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 justify-end flex-wrap">
+                      {(() => {
+                        const st = sendStates[p.id] ?? { sms: 'idle', wa: 'idle' }
+                        return (
+                          <>
+                            <button
+                              onClick={() => sendMessage(p.id, 'sms')}
+                              disabled={st.sms === 'loading'}
+                              className={`text-xs px-2 py-1 rounded font-medium transition ${
+                                st.sms === 'ok' ? 'bg-green-100 text-green-700' :
+                                st.sms === 'err' ? 'bg-red-100 text-red-700' :
+                                'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                              }`}
+                            >
+                              {st.sms === 'loading' ? '...' : st.sms === 'ok' ? '📱✓' : st.sms === 'err' ? '📱!' : '📱 SMS'}
+                            </button>
+                            <button
+                              onClick={() => sendMessage(p.id, 'wa')}
+                              disabled={st.wa === 'loading'}
+                              className={`text-xs px-2 py-1 rounded font-medium transition ${
+                                st.wa === 'ok' ? 'bg-green-100 text-green-700' :
+                                st.wa === 'err' ? 'bg-red-100 text-red-700' :
+                                'bg-green-100 text-green-700 hover:bg-green-200'
+                              }`}
+                            >
+                              {st.wa === 'loading' ? '...' : st.wa === 'ok' ? '💬✓' : st.wa === 'err' ? '💬!' : '💬 WA'}
+                            </button>
+                          </>
+                        )
+                      })()}
+                      {p.demo_url && (
+                        <a href={p.demo_url} target="_blank" rel="noopener"
+                          className="text-xs text-purple-600 hover:underline px-1">
+                          Demo
+                        </a>
+                      )}
+                      <button
+                        onClick={() => deleteProspect(p.id)}
+                        className="text-xs text-red-400 hover:text-red-600 transition px-1"
                       >
-                        Demo
-                      </a>
-                    )}
-                    <button
-                      onClick={() => deleteProspect(p.id)}
-                      className="text-xs text-red-400 hover:text-red-600 transition"
-                    >
-                      Dzēst
-                    </button>
+                        Dzēst
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
