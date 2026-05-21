@@ -106,15 +106,45 @@ export type Database = {
         Relationships: [{ foreignKeyName: "standartu_pakalpojumi_kategorija_id_fkey"; columns: ["kategorija_id"]; isOneToOne: false; referencedRelation: "pakalpojumu_kategorijas"; referencedColumns: ["id"] }]
       }
       zinojumi: {
-        Row: { id: string; prospect_id: string; teksts: string | null; izveidots_at: string | null }
-        Insert: { id?: string; prospect_id: string; teksts?: string | null; izveidots_at?: string | null }
-        Update: { id?: string; prospect_id?: string; teksts?: string | null; izveidots_at?: string | null }
-        Relationships: []
+        Row: { id: string; prospect_id: string; teksts: string | null; kanals: string; virziens: string; statuss: string; izveidots_at: string | null }
+        Insert: { id?: string; prospect_id: string; teksts?: string | null; kanals?: string; virziens?: string; statuss?: string; izveidots_at?: string | null }
+        Update: { id?: string; prospect_id?: string; teksts?: string | null; kanals?: string; virziens?: string; statuss?: string; izveidots_at?: string | null }
+        Relationships: [{ foreignKeyName: "zinojumi_prospect_id_fkey"; columns: ["prospect_id"]; isOneToOne: false; referencedRelation: "prospects"; referencedColumns: ["id"] }]
       }
       prospects: {
-        Row: { id: string; vards: string; uzvards: string; telefons: string; ss_url: string | null; piezimes: string | null; gdpr_piekrits: boolean; gdpr_datums: string | null; dzesanas_pieprasits: boolean; dzesanas_datums: string | null; updated_at: string | null; created_at: string | null }
-        Insert: { id?: string; vards: string; uzvards: string; telefons: string; ss_url?: string | null; piezimes?: string | null; gdpr_piekrits?: boolean; gdpr_datums?: string | null; dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null; updated_at?: string | null; created_at?: string | null }
-        Update: { id?: string; vards?: string; uzvards?: string; telefons?: string; ss_url?: string | null; piezimes?: string | null; gdpr_piekrits?: boolean; gdpr_datums?: string | null; dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null; updated_at?: string | null; created_at?: string | null }
+        Row: {
+          id: string; vards: string; uzvards: string; telefons: string;
+          whatsapp: string | null; valoda: string; statuss: string; regions: string | null;
+          demo_slug: string | null; demo_url: string | null;
+          maksatajs: boolean; plans: string | null;
+          trial_sakums: string | null; trial_beigas: string | null; pedeja_kontakts: string | null;
+          ss_url: string | null; piezimes: string | null;
+          gdpr_piekrits: boolean; gdpr_datums: string | null;
+          dzesanas_pieprasits: boolean; dzesanas_datums: string | null;
+          updated_at: string | null; created_at: string | null
+        }
+        Insert: {
+          id?: string; vards: string; uzvards: string; telefons: string;
+          whatsapp?: string | null; valoda?: string; statuss?: string; regions?: string | null;
+          demo_slug?: string | null; demo_url?: string | null;
+          maksatajs?: boolean; plans?: string | null;
+          trial_sakums?: string | null; trial_beigas?: string | null; pedeja_kontakts?: string | null;
+          ss_url?: string | null; piezimes?: string | null;
+          gdpr_piekrits?: boolean; gdpr_datums?: string | null;
+          dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null;
+          updated_at?: string | null; created_at?: string | null
+        }
+        Update: {
+          id?: string; vards?: string; uzvards?: string; telefons?: string;
+          whatsapp?: string | null; valoda?: string; statuss?: string; regions?: string | null;
+          demo_slug?: string | null; demo_url?: string | null;
+          maksatajs?: boolean; plans?: string | null;
+          trial_sakums?: string | null; trial_beigas?: string | null; pedeja_kontakts?: string | null;
+          ss_url?: string | null; piezimes?: string | null;
+          gdpr_piekrits?: boolean; gdpr_datums?: string | null;
+          dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null;
+          updated_at?: string | null; created_at?: string | null
+        }
         Relationships: []
       }
     }
