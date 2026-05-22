@@ -92,7 +92,7 @@ function demoToKartite(m: typeof demo_meistari[number]): Kartite {
     specialitate_ru: m.specialitate_ru,
     regioni: m.regioni,
     demo_url: m.subdomens,
-    foto_hero: null,
+    foto_hero: m.foto_url,
     rating: m.rating,
     atsauksmes_skaits: m.atsauksmes_skaits,
     cena_no: m.cena_no,
@@ -316,9 +316,10 @@ export default function MeistariGrid({ valoda }: Props) {
               const dienasStr = formatDienas(m.darba_laiks.dienas)
 
               return (
-                <div
+                <Link
                   key={m.id}
-                  className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col"
+                  href={m.demo_url}
+                  className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col group cursor-pointer"
                 >
                   {m.isReal && (
                     <span className="self-start mb-2 text-xs font-semibold bg-green-100 text-green-700 rounded-full px-2.5 py-0.5">
@@ -328,12 +329,12 @@ export default function MeistariGrid({ valoda }: Props) {
 
                   {/* Galvene */}
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-11 h-11 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
                       {m.foto_hero ? (
                         <Image
                           src={m.foto_hero}
-                          width={44}
-                          height={44}
+                          width={48}
+                          height={48}
                           alt={m.vards}
                           className="w-full h-full object-cover"
                         />
@@ -342,7 +343,7 @@ export default function MeistariGrid({ valoda }: Props) {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{m.vards}</p>
+                      <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{m.vards}</p>
                       <span className="inline-block mt-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-medium px-2.5 py-0.5">
                         {spec}
                       </span>
@@ -389,13 +390,10 @@ export default function MeistariGrid({ valoda }: Props) {
                   )}
 
                   {/* CTA */}
-                  <Link
-                    href={m.demo_url}
-                    className="mt-4 block w-full text-center rounded-full border border-blue-600 text-blue-600 text-sm font-semibold py-2 hover:bg-blue-600 hover:text-white transition-colors"
-                  >
+                  <div className="mt-4 block w-full text-center rounded-full border border-blue-600 text-blue-600 text-sm font-semibold py-2 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     {txt.profile[valoda]}
-                  </Link>
-                </div>
+                  </div>
+                </Link>
               )
             })}
           </div>

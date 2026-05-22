@@ -17,6 +17,7 @@ export type DemoMeistars = {
   atsauksmes_skaits: number
   cena_no: number
   subdomens: string
+  foto_url: string | null
 }
 
 export type DemoPaklItem = {
@@ -174,6 +175,7 @@ export const demo_meistari: DemoMeistars[] = [
     atsauksmes_skaits: 34,
     cena_no: 40,
     subdomens: '/meistari/demo-santehnikis',
+    foto_url: 'https://i.pravatar.cc/150?img=12',
   },
   {
     vards: 'Sergejs Ivanovs',
@@ -192,6 +194,7 @@ export const demo_meistari: DemoMeistars[] = [
     atsauksmes_skaits: 28,
     cena_no: 35,
     subdomens: '/meistari/demo-santehnikis',
+    foto_url: 'https://i.pravatar.cc/150?img=52',
   },
   {
     vards: 'Māris Ozols',
@@ -210,5 +213,6 @@ export const demo_meistari: DemoMeistars[] = [
     atsauksmes_skaits: 51,
     cena_no: 45,
     subdomens: '/meistari/demo-santehnikis',
+    foto_url: 'https://i.pravatar.cc/150?img=33',
   },
 ]
