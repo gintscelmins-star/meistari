@@ -40,11 +40,13 @@ type Kartite = {
 const SPECIALITATE_RU: Record<string, string> = {
   santehnikis: 'Сантехник',
   elektrikis: 'Электрик',
-  'santehnikis,elektrikis': 'Santehniķis / Elektriķis',
+  remontdarbi: 'Ремонтные работы',
+  'santehnikis,elektrikis': 'Сантехник / Электрик',
 }
 const SPECIALITATE_LV: Record<string, string> = {
   santehnikis: 'Santehniķis',
   elektrikis: 'Elektriķis',
+  remontdarbi: 'Remontdarbi',
   'santehnikis,elektrikis': 'Santehniķis / Elektriķis',
 }
 

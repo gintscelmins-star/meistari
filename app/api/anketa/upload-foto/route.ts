@@ -60,7 +60,10 @@ export async function POST(req: NextRequest) {
     .from('meistaru-foto')
     .getPublicUrl(path)
 
-  const url = publicData.publicUrl
+  const url = publicData?.publicUrl
+  if (typeof url !== 'string' || !url) {
+    return NextResponse.json({ error: 'Neizdevās iegūt foto URL' }, { status: 500 })
+  }
 
   const fotoUpdate: ProspectUpdate = { updated_at: new Date().toISOString() }
   if (fotoTips === 'hero') fotoUpdate.foto_hero = url
