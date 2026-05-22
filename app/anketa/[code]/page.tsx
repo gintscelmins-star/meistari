@@ -2,11 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-
-const REGIONI = [
-  'Rīga', 'Jūrmala', 'Mārupe', 'Ķekava', 'Salaspils',
-  'Jelgava', 'Ogre', 'Sigulda', 'Liepāja', 'Daugavpils', 'Ventspils',
-]
+import { pilsetas } from '@/lib/latvijas-pilsetas'
 
 const PAKALPOJUMU_SARAKSTS = [
   'Santehniskie darbi', 'Kanalizācija', 'Apkure', 'Ūdensvads',
@@ -65,7 +61,8 @@ export default function AnketaPage() {
   const [vards, setVards] = useState('')
   const [uzvards, setUzvards] = useState('')
   const [email, setEmail] = useState('')
-  const [specialitate, setSpecialitate] = useState('Santehniķis')
+  const [specialitates, setSpecialitates] = useState<string[]>(['Santehniķis'])
+  const [specialitateCustom, setSpecialitateCustom] = useState('')
   const [regioni, setRegioni] = useState<string[]>([])
   const [pakalpojumi, setPakalpojumi] = useState<string[]>([])
   const [apraksts, setApraksts] = useState('')
@@ -87,12 +84,18 @@ export default function AnketaPage() {
         setProspect(d)
         setVards(d.vards ?? '')
         setUzvards(d.uzvards ?? '')
-        if (d.nodarbosanas === 'elektrikis') setSpecialitate('Elektriķis')
+        if (d.nodarbosanas === 'elektrikis') setSpecialitates(['Elektriķis'])
         if (d.regions) setRegioni(d.regions.split(',').map((r: string) => r.trim()).filter(Boolean))
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
   }, [code])
+
+  function toggleSpecialitate(s: string) {
+    setSpecialitates(prev =>
+      prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+    )
+  }
 
   function toggleRegion(r: string) {
     setRegioni(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r])
@@ -131,6 +134,10 @@ export default function AnketaPage() {
     if (!fotos.hero.uploadedUrl) { setSubmitError('Galvenais foto ir obligāts'); return }
     if (regioni.length === 0) { setSubmitError('Izvēlies vismaz vienu reģionu'); return }
     if (pakalpojumi.length === 0) { setSubmitError('Izvēlies vismaz vienu pakalpojumu'); return }
+    if (specialitates.length === 0) { setSubmitError('Izvēlies specialitāti'); return }
+    if (specialitates.includes('Cits') && !specialitateCustom.trim()) {
+      setSubmitError('Ievadi savu specialitāti'); return
+    }
 
     setSubmitting(true)
     setSubmitError('')
@@ -140,7 +147,10 @@ export default function AnketaPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         anketa_code: code,
-        vards, uzvards, email, specialitate, regioni, pakalpojumi, apraksts,
+        vards, uzvards, email,
+        specialitates,
+        specialitate_custom: specialitateCustom.trim(),
+        regioni, pakalpojumi, apraksts,
         darba_laiki: darbaLaiki,
       }),
     })
@@ -244,30 +254,83 @@ export default function AnketaPage() {
           {/* Specialitāte */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Specialitāte *</h2>
+            <p className="text-xs text-gray-400">Var izvēlēties vairākas</p>
             <div className="flex gap-2 flex-wrap">
               {SPECIALITATES.map(s => (
-                <button key={s} type="button" onClick={() => setSpecialitate(s)}
+                <button key={s} type="button" onClick={() => toggleSpecialitate(s)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
-                    specialitate === s ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'
+                    specialitates.includes(s) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'
                   }`}>
                   {s}
                 </button>
               ))}
             </div>
+            {specialitates.includes('Cits') && (
+              <input
+                type="text"
+                value={specialitateCustom}
+                onChange={e => setSpecialitateCustom(e.target.value)}
+                placeholder="Ievadi savu specialitāti, piem. Gāzes darbi"
+                maxLength={80}
+                className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
           </div>
 
           {/* Reģioni */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Reģioni, kur strādā *</h2>
-            <div className="flex flex-wrap gap-2">
-              {REGIONI.map(r => (
-                <button key={r} type="button" onClick={() => toggleRegion(r)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-                    regioni.includes(r) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'
-                  }`}>
-                  {r}
-                </button>
-              ))}
+            <p className="text-xs text-gray-400">Izvēlies pilsētu. Ja strādā konkrētos rajonos — izvēlies tos arī.</p>
+            <div className="flex flex-col gap-3">
+              {pilsetas.map(({ pilseta, rajoni }) => {
+                const pilsetaSelected = regioni.includes(pilseta) || rajoni.some(r => regioni.includes(`${pilseta}:${r}`))
+                return (
+                  <div key={pilseta}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (pilsetaSelected) {
+                          setRegioni(prev => prev.filter(r => r !== pilseta && !r.startsWith(`${pilseta}:`)))
+                        } else {
+                          setRegioni(prev => [...prev.filter(r => !r.startsWith(`${pilseta}:`)), pilseta])
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                        pilsetaSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'
+                      }`}
+                    >
+                      {pilseta}
+                    </button>
+                    {pilsetaSelected && rajoni.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2 ml-2">
+                        {rajoni.map(r => {
+                          const key = `${pilseta}:${r}`
+                          const rajonsSelected = regioni.includes(key)
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => {
+                                setRegioni(prev => {
+                                  const withoutCity = prev.filter(x => x !== pilseta)
+                                  return rajonsSelected
+                                    ? withoutCity.filter(x => x !== key)
+                                    : [...withoutCity, key]
+                                })
+                              }}
+                              className={`px-2.5 py-1 rounded-full text-xs border transition ${
+                                rajonsSelected ? 'bg-blue-100 text-blue-700 border-blue-400' : 'bg-gray-50 text-gray-500 border-gray-200'
+                              }`}
+                            >
+                              {r}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
 

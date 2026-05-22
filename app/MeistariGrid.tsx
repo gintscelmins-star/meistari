@@ -40,24 +40,35 @@ type Kartite = {
 const SPECIALITATE_RU: Record<string, string> = {
   santehnikis: 'Сантехник',
   elektrikis: 'Электрик',
+  'santehnikis,elektrikis': 'Santehniķis / Elektriķis',
 }
 const SPECIALITATE_LV: Record<string, string> = {
   santehnikis: 'Santehniķis',
   elektrikis: 'Elektriķis',
+  'santehnikis,elektrikis': 'Santehniķis / Elektriķis',
+}
+
+function formatNodarbosanas(n: string | null, lang: 'lv' | 'ru'): string {
+  if (!n) return lang === 'ru' ? 'Мастер' : 'Meistars'
+  const map = lang === 'ru' ? SPECIALITATE_RU : SPECIALITATE_LV
+  if (map[n]) return map[n]
+  return n.charAt(0).toUpperCase() + n.slice(1)
 }
 
 function dbToKartite(p: DbMeistars): Kartite {
-  const regioni = (p.regions ?? '')
-    .split(',')
-    .map(r => r.trim().split(':')[0].trim())
-    .filter(Boolean)
+  const regioni = [...new Set(
+    (p.regions ?? '')
+      .split(',')
+      .map(r => r.trim().split(':')[0].trim())
+      .filter(Boolean)
+  )]
 
   return {
     id: p.id,
     vards: `${p.vards} ${p.uzvards}`,
     iniciāļi: (p.vards[0] ?? '') + (p.uzvards[0] ?? ''),
-    specialitate_lv: SPECIALITATE_LV[p.nodarbosanas ?? ''] ?? 'Meistars',
-    specialitate_ru: SPECIALITATE_RU[p.nodarbosanas ?? ''] ?? 'Мастер',
+    specialitate_lv: formatNodarbosanas(p.nodarbosanas, 'lv'),
+    specialitate_ru: formatNodarbosanas(p.nodarbosanas, 'ru'),
     regioni,
     demo_url: p.demo_url ?? '#',
     foto_hero: p.foto_hero,

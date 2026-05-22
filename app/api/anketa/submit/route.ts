@@ -11,10 +11,18 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
 
-  const { anketa_code, vards, uzvards, email, specialitate, regioni, pakalpojumi, apraksts, darba_laiki } = body
+  const { anketa_code, vards, uzvards, email, specialitates, specialitate_custom, regioni, pakalpojumi, apraksts, darba_laiki } = body
 
   if (!anketa_code || !vards || !uzvards || !email) {
     return NextResponse.json({ error: 'Obligātie lauki trūkst' }, { status: 400 })
+  }
+
+  const specsArr: string[] = Array.isArray(specialitates) ? specialitates : []
+  function resolveNodarbosanas(): string {
+    if (specsArr.includes('Cits') && specialitate_custom) return String(specialitate_custom).trim().toLowerCase()
+    if (specsArr.includes('Elektriķis') && specsArr.includes('Santehniķis')) return 'santehnikis,elektrikis'
+    if (specsArr.includes('Elektriķis')) return 'elektrikis'
+    return 'santehnikis'
   }
 
   const supabase = getSupabaseServer()
@@ -39,7 +47,7 @@ export async function POST(req: NextRequest) {
       vards: String(vards).trim(),
       uzvards: String(uzvards).trim(),
       email: String(email).trim(),
-      nodarbosanas: specialitate === 'Elektriķis' ? 'elektrikis' : 'santehnikis',
+      nodarbosanas: resolveNodarbosanas(),
       regions: Array.isArray(regioni) ? regioni.join(', ') : null,
       pakalpojumi: Array.isArray(pakalpojumi) ? pakalpojumi : null,
       apraksts: apraksts ? String(apraksts).trim() : null,
