@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       vards: r.vards?.trim() || '',
       uzvards: r.uzvards?.trim() || '',
       telefons: r.telefons,
-      valoda: ['lv', 'ru', 'en'].includes(r.valoda?.trim().toLowerCase()) ? r.valoda.trim().toLowerCase() : 'lv',
+      valoda: ['lv', 'ru'].includes(r.valoda?.trim().toLowerCase()) ? r.valoda.trim().toLowerCase() : 'lv',
       regions: r.regions?.trim() || null,
       nodarbosanas: r.nodarbosanas?.trim() || null,
       statuss: 'jauns',
