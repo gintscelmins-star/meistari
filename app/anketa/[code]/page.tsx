@@ -9,7 +9,7 @@ const PAKALPOJUMU_SARAKSTS = [
   'Boileri', 'Vannas istabas', 'Avārijas 24/7',
 ]
 
-const SPECIALITATES = ['Santehniķis', 'Elektriķis', 'Cits']
+const SPECIALITATES = ['Santehniķis', 'Elektriķis', 'Remontdarbi', 'Cits']
 
 const DIENAS = [
   'Pirmdiena', 'Otrdiena', 'Trešdiena', 'Ceturtdiena',
@@ -142,14 +142,17 @@ export default function AnketaPage() {
     setSubmitting(true)
     setSubmitError('')
 
+    const finalSpecialitates = specialitates.includes('Cits')
+      ? [...specialitates.filter(s => s !== 'Cits'), `custom: ${specialitateCustom.trim()}`]
+      : specialitates
+
     const res = await fetch('/api/anketa/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         anketa_code: code,
         vards, uzvards, email,
-        specialitates,
-        specialitate_custom: specialitateCustom.trim(),
+        specialitates: finalSpecialitates,
         regioni, pakalpojumi, apraksts,
         darba_laiki: darbaLaiki,
       }),
@@ -283,16 +286,16 @@ export default function AnketaPage() {
             <p className="text-xs text-gray-400">Izvēlies pilsētu. Ja strādā konkrētos rajonos — izvēlies tos arī.</p>
             <div className="flex flex-col gap-3">
               {pilsetas.map(({ pilseta, rajoni }) => {
-                const pilsetaSelected = regioni.includes(pilseta) || rajoni.some(r => regioni.includes(`${pilseta}:${r}`))
+                const pilsetaSelected = regioni.includes(pilseta) || rajoni.some(r => regioni.includes(`${pilseta}: ${r}`))
                 return (
                   <div key={pilseta}>
                     <button
                       type="button"
                       onClick={() => {
                         if (pilsetaSelected) {
-                          setRegioni(prev => prev.filter(r => r !== pilseta && !r.startsWith(`${pilseta}:`)))
+                          setRegioni(prev => prev.filter(r => r !== pilseta && !r.startsWith(`${pilseta}: `)))
                         } else {
-                          setRegioni(prev => [...prev.filter(r => !r.startsWith(`${pilseta}:`)), pilseta])
+                          setRegioni(prev => [...prev.filter(r => !r.startsWith(`${pilseta}: `)), pilseta])
                         }
                       }}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
@@ -304,7 +307,7 @@ export default function AnketaPage() {
                     {pilsetaSelected && rajoni.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2 ml-2">
                         {rajoni.map(r => {
-                          const key = `${pilseta}:${r}`
+                          const key = `${pilseta}: ${r}`
                           const rajonsSelected = regioni.includes(key)
                           return (
                             <button
