@@ -21,15 +21,36 @@ type ImportResult = {
 
 const KOLONNAS = ['Vārds', 'Telefons', 'Valoda', 'Reģions', 'Specialitāte']
 
+function normalizeTelefons(t: string): string {
+  const n = t.replace(/[\s\-().]/g, '').trim()
+  if (!n) return ''
+  if (n.startsWith('+371')) return n
+  if (n.startsWith('00371')) return '+' + n.slice(2)
+  if (n.startsWith('371') && n.length === 11) return '+' + n
+  if (/^\d{8}$/.test(n)) return '+371' + n
+  return n
+}
+
+function col(cols: string[], i: number): string {
+  return i >= 0 ? (cols[i] ?? '').trim() : ''
+}
+
 function parseCsv(text: string): Rinda[] {
   const lines = text.trim().split(/\r?\n/).filter(l => l.trim())
-  if (lines.length < 2) return []
+  if (lines.length < 1) return []
 
-  // Atrod separatoru — tab vai komats
   const sep = lines[0].includes('\t') ? '\t' : ','
-  const header = lines[0].split(sep).map(h => h.trim().toLowerCase())
 
-  // Kolonnu indeksi (fleksibli)
+  // Ja pirmā rinda satur galvenes — atpazīst un izlaiž
+  const firstLower = lines[0].toLowerCase()
+  const hasHeader = firstLower.includes('vārds') || firstLower.includes('vards') ||
+    firstLower.includes('telefon') || firstLower.includes('valoda')
+
+  const headerLine = hasHeader ? lines[0] : null
+  const dataLines = hasHeader ? lines.slice(1) : lines
+
+  const header = (headerLine ?? '').split(sep).map(h => h.trim().toLowerCase())
+
   const idx = {
     vards: header.findIndex(h => h.includes('vārds') || h.includes('vards') || h.includes('nosaukums')),
     telefons: header.findIndex(h => h.includes('telefon')),
@@ -38,20 +59,26 @@ function parseCsv(text: string): Rinda[] {
     nodarbosanas: header.findIndex(h => h.includes('specialit') || h.includes('nodarbošan')),
   }
 
-  return lines.slice(1).map(line => {
+  // Ja nav galvenes, izmanto pozicionālo secību: 0=Vārds, 1=Telefons, 2=Valoda, 3=Reģions, 4=Specialitāte
+  if (!hasHeader) {
+    idx.vards = 0; idx.telefons = 1; idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4
+  }
+
+  return dataLines.map(line => {
     const cols = line.split(sep)
-    const fullName = (idx.vards >= 0 ? cols[idx.vards] : '').trim()
+    const fullName = col(cols, idx.vards)
     const spaceIdx = fullName.indexOf(' ')
     const vards = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
     const uzvards = spaceIdx > 0 ? fullName.slice(spaceIdx + 1) : ''
+    const telefons = normalizeTelefons(col(cols, idx.telefons))
 
     return {
       vards,
       uzvards,
-      telefons: (idx.telefons >= 0 ? cols[idx.telefons] : '').trim(),
-      valoda: (idx.valoda >= 0 ? cols[idx.valoda] : 'lv').trim() || 'lv',
-      regions: (idx.regions >= 0 ? cols[idx.regions] : '').trim(),
-      nodarbosanas: (idx.nodarbosanas >= 0 ? cols[idx.nodarbosanas] : '').trim(),
+      telefons,
+      valoda: col(cols, idx.valoda) || 'lv',
+      regions: col(cols, idx.regions),
+      nodarbosanas: col(cols, idx.nodarbosanas),
     }
   }).filter(r => r.telefons)
 }
@@ -134,6 +161,9 @@ export default function ImportPage() {
         />
         {fileName && <p className="mt-2 text-xs text-gray-400">{fileName}</p>}
         {parseError && <p className="mt-2 text-xs text-red-500">{parseError}</p>}
+        <p className="mt-3 text-xs text-gray-400">
+          Tukši lauki ir OK — tiks saglabāti kā tukši. Telefons automātiski formatēts uz +371XXXXXXXX.
+        </p>
       </div>
 
       {/* Priekšskatījums */}

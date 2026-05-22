@@ -13,7 +13,13 @@ type CsvRinda = {
 }
 
 function normalizeTelefons(t: string): string {
-  return t.replace(/\s+/g, '').trim()
+  const n = t.replace(/[\s\-().]/g, '').trim()
+  if (!n) return ''
+  if (n.startsWith('+371')) return n
+  if (n.startsWith('00371')) return '+' + n.slice(2)
+  if (n.startsWith('371') && n.length === 11) return '+' + n
+  if (/^\d{8}$/.test(n)) return '+371' + n
+  return n
 }
 
 export async function POST(req: NextRequest) {
@@ -66,10 +72,10 @@ export async function POST(req: NextRequest) {
 
   if (toInsert.length > 0) {
     const insertData = toInsert.map(r => ({
-      vards: r.vards.trim(),
-      uzvards: r.uzvards.trim(),
+      vards: r.vards?.trim() || r.telefons,
+      uzvards: r.uzvards?.trim() || '',
       telefons: r.telefons,
-      valoda: r.valoda?.trim() || 'lv',
+      valoda: ['lv', 'ru', 'en'].includes(r.valoda?.trim().toLowerCase()) ? r.valoda.trim().toLowerCase() : 'lv',
       regions: r.regions?.trim() || null,
       nodarbosanas: r.nodarbosanas?.trim() || null,
       statuss: 'jauns',
