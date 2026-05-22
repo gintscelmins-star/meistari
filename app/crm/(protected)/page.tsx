@@ -333,6 +333,13 @@ export default function CrmPage() {
                           Demo
                         </a>
                       )}
+                      <Link
+                        href={`/crm/prospects/${p.id}/edit`}
+                        className="text-xs text-gray-500 hover:text-gray-800 transition px-1"
+                        title="Rediģēt"
+                      >
+                        ✏️
+                      </Link>
                       <button
                         onClick={() => deleteProspect(p.id)}
                         className="text-xs text-red-400 hover:text-red-600 transition px-1"

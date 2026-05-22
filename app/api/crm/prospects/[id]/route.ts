@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, vards, uzvards, telefons, whatsapp, valoda, statuss, regions, demo_url, piezimes, created_at')
+    .select('id, vards, uzvards, telefons, whatsapp, valoda, nodarbosanas, statuss, regions, ss_url, demo_slug, demo_url, piezimes, created_at')
     .eq('id', id)
     .single()
 
@@ -55,9 +55,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     update.pedeja_kontakts = new Date().toISOString()
   }
 
+  if (body.vards !== undefined) update.vards = String(body.vards).trim()
+  if (body.uzvards !== undefined) update.uzvards = String(body.uzvards).trim()
+  if (body.telefons !== undefined) update.telefons = String(body.telefons).trim()
+  if (body.whatsapp !== undefined) update.whatsapp = body.whatsapp
+  if (body.valoda !== undefined && ['lv', 'ru'].includes(body.valoda)) update.valoda = body.valoda
+  if (body.nodarbosanas !== undefined && ['santehnikis', 'elektrikis'].includes(body.nodarbosanas)) update.nodarbosanas = body.nodarbosanas
+  if (body.regions !== undefined) update.regions = body.regions
+  if (body.ss_url !== undefined) update.ss_url = body.ss_url
   if (body.piezimes !== undefined) update.piezimes = body.piezimes
-  if (body.demo_url !== undefined) update.demo_url = body.demo_url
   if (body.demo_slug !== undefined) update.demo_slug = body.demo_slug
+  if (body.demo_url !== undefined) update.demo_url = body.demo_url
 
   const supabase = getSupabaseServer()
   const { error } = await supabase
