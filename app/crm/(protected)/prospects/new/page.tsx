@@ -39,6 +39,7 @@ export default function NewProspectPage() {
   const [telefons, setTelefons] = useState('+371 ')
   const [whatsapp, setWhatsapp] = useState(false)
   const [valoda, setValoda] = useState<'lv' | 'ru'>('lv')
+  const [nodarbosanas, setNodarbosanas] = useState<'santehnikis' | 'elektrikis'>('santehnikis')
   const [regions, setRegions] = useState('')
   const [piezimes, setPiezimes] = useState('')
   const [loading, setLoading] = useState(false)
@@ -72,7 +73,7 @@ export default function NewProspectPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         vards, uzvards, telefons, whatsapp: wa,
-        valoda, regions: regions || null,
+        valoda, nodarbosanas, regions: regions || null,
         piezimes: piezimes || null,
         demo_slug: demoSlug || null,
         gdpr_piekrits: false,
@@ -168,6 +169,29 @@ export default function NewProspectPage() {
             />
             <span className="text-sm text-gray-700">WhatsApp (tas pats numurs)</span>
           </label>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-500">Nodarbošanās</label>
+          <div className="flex gap-2">
+            {([
+              { id: 'santehnikis', label: '🔧 Santehniķis' },
+              { id: 'elektrikis', label: '⚡ Elektriķis' },
+            ] as const).map(n => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => setNodarbosanas(n.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                  nodarbosanas === n.id
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {n.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">

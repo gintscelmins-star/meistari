@@ -115,6 +115,7 @@ export type Database = {
         Row: {
           id: string; vards: string; uzvards: string; telefons: string;
           whatsapp: string | null; valoda: string; statuss: string; regions: string | null;
+          nodarbosanas: string | null;
           demo_slug: string | null; demo_url: string | null;
           maksatajs: boolean; plans: string | null;
           trial_sakums: string | null; trial_beigas: string | null; pedeja_kontakts: string | null;
@@ -126,6 +127,7 @@ export type Database = {
         Insert: {
           id?: string; vards: string; uzvards: string; telefons: string;
           whatsapp?: string | null; valoda?: string; statuss?: string; regions?: string | null;
+          nodarbosanas?: string | null;
           demo_slug?: string | null; demo_url?: string | null;
           maksatajs?: boolean; plans?: string | null;
           trial_sakums?: string | null; trial_beigas?: string | null; pedeja_kontakts?: string | null;
@@ -137,6 +139,7 @@ export type Database = {
         Update: {
           id?: string; vards?: string; uzvards?: string; telefons?: string;
           whatsapp?: string | null; valoda?: string; statuss?: string; regions?: string | null;
+          nodarbosanas?: string | null;
           demo_slug?: string | null; demo_url?: string | null;
           maksatajs?: boolean; plans?: string | null;
           trial_sakums?: string | null; trial_beigas?: string | null; pedeja_kontakts?: string | null;
