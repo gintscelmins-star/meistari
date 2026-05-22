@@ -21,9 +21,20 @@ type Prospect = {
   statuss: string
   regions: string | null
   demo_url: string | null
+  trial_beigas: string | null
+  lapa_izveidota: boolean
   piezimes: string | null
   created_at: string | null
   _zinojumi_count?: number
+}
+
+function TrialCountdown({ trialBeigas }: { trialBeigas: string | null }) {
+  if (!trialBeigas) return <span className="text-gray-300 text-xs">—</span>
+  const days = Math.ceil((new Date(trialBeigas).getTime() - Date.now()) / 86400000)
+  if (days < 0) return <span className="text-xs font-medium text-red-500">Beidzies</span>
+  if (days <= 3) return <span className="text-xs font-medium text-orange-500">{days}d</span>
+  if (days <= 7) return <span className="text-xs font-medium text-yellow-600">{days}d</span>
+  return <span className="text-xs font-medium text-green-600">{days}d</span>
 }
 
 type Stats = {
@@ -249,6 +260,7 @@ export default function CrmPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Valoda</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statuss</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Datums</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Trial</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -295,6 +307,9 @@ export default function CrmPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-400 text-xs">
                     {p.created_at ? new Date(p.created_at).toLocaleDateString('lv') : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <TrialCountdown trialBeigas={p.trial_beigas} />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end flex-wrap">

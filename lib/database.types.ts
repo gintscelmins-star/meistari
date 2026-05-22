@@ -117,6 +117,7 @@ export type Database = {
           whatsapp: string | null; valoda: string; statuss: string; regions: string | null;
           nodarbosanas: string | null;
           demo_slug: string | null; demo_url: string | null;
+          lapa_izveidota: boolean;
           maksatajs: boolean; plans: string | null;
           trial_sakums: string | null; trial_beigas: string | null; pedeja_kontakts: string | null;
           ss_url: string | null; piezimes: string | null;
@@ -129,6 +130,7 @@ export type Database = {
           whatsapp?: string | null; valoda?: string; statuss?: string; regions?: string | null;
           nodarbosanas?: string | null;
           demo_slug?: string | null; demo_url?: string | null;
+          lapa_izveidota?: boolean;
           maksatajs?: boolean; plans?: string | null;
           trial_sakums?: string | null; trial_beigas?: string | null; pedeja_kontakts?: string | null;
           ss_url?: string | null; piezimes?: string | null;
@@ -141,6 +143,7 @@ export type Database = {
           whatsapp?: string | null; valoda?: string; statuss?: string; regions?: string | null;
           nodarbosanas?: string | null;
           demo_slug?: string | null; demo_url?: string | null;
+          lapa_izveidota?: boolean;
           maksatajs?: boolean; plans?: string | null;
           trial_sakums?: string | null; trial_beigas?: string | null; pedeja_kontakts?: string | null;
           ss_url?: string | null; piezimes?: string | null;

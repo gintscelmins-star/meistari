@@ -22,7 +22,30 @@ export default async function MeistarsPage(props: {
     .eq('aktīvs', true)
     .single()
 
-  if (!meistars) notFound()
+  if (!meistars) {
+    const { data: prospect } = await supabase
+      .from('prospects')
+      .select('id, vards, uzvards, nodarbosanas, regions, valoda')
+      .eq('demo_slug', slug)
+      .eq('lapa_izveidota', true)
+      .single()
+
+    if (!prospect) notFound()
+
+    const demoData = getDemoSantehnikisData()
+    return (
+      <MeistarsProfils
+        {...demoData}
+        meistars={{
+          ...demoData.meistars,
+          vards: prospect.vards,
+          uzvards: prospect.uzvards,
+          specialitate: prospect.nodarbosanas === 'elektrikis' ? 'Elektriķis' : 'Santehniķis',
+        }}
+        isDemo
+      />
+    )
+  }
 
   const [
     { data: pakalpojumi },
