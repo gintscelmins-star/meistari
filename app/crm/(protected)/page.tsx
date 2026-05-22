@@ -42,17 +42,21 @@ type Stats = {
   jauns: number
   nosutits: number
   atbildeja: number
+  anketa_nosutita: number
+  gaida_apstiprinasanu: number
   demo_nosutits: number
   maksatajs: number
   atteicas: number
 }
 
-const STATUSI = ['jauns', 'nosutits', 'atbildeja', 'demo_nosutits', 'maksatajs', 'atteicas'] as const
+const STATUSI = ['jauns', 'nosutits', 'atbildeja', 'anketa_nosutita', 'gaida_apstiprinasanu', 'demo_nosutits', 'maksatajs', 'atteicas'] as const
 
 const STATUSS_LABEL: Record<string, string> = {
   jauns: 'Jauns',
   nosutits: 'Nosūtīts',
   atbildeja: 'Atbildēja',
+  anketa_nosutita: 'Anketa nosūtīta',
+  gaida_apstiprinasanu: 'Gaida apstiprin.',
   demo_nosutits: 'Demo nosūtīts',
   maksatajs: 'Maksātājs',
   atteicas: 'Atteicās',
@@ -62,6 +66,8 @@ const STATUSS_COLOR: Record<string, string> = {
   jauns: 'bg-gray-100 text-gray-700',
   nosutits: 'bg-blue-100 text-blue-700',
   atbildeja: 'bg-yellow-100 text-yellow-700',
+  anketa_nosutita: 'bg-indigo-100 text-indigo-700',
+  gaida_apstiprinasanu: 'bg-amber-100 text-amber-700',
   demo_nosutits: 'bg-purple-100 text-purple-700',
   maksatajs: 'bg-green-100 text-green-700',
   atteicas: 'bg-red-100 text-red-700',
@@ -194,7 +200,7 @@ export default function CrmPage() {
   const tabs = [
     { key: 'visi', label: 'Visi', count: stats?.total },
     { key: 'jauns', label: 'Jauni', count: stats?.jauns },
-    { key: 'demo_nosutits', label: 'Demo nosūtīts', count: stats?.demo_nosutits },
+    { key: 'gaida_apstiprinasanu', label: 'Gaida apstiprin.', count: stats?.gaida_apstiprinasanu },
     { key: 'maksatajs', label: 'Maksātāji', count: stats?.maksatajs },
     { key: 'atteicas', label: 'Atteicās', count: stats?.atteicas },
   ]

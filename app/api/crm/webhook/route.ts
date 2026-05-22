@@ -1,10 +1,10 @@
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { twilioClient } from '@/lib/twilio'
-import { SMS_TEKSTI } from '@/lib/sms-teksti'
 import { getSupabaseServer } from '@/lib/supabase'
-import { createMeistaraLapa } from '@/lib/create-meistars-page'
 
 const TWIML_OK = '<?xml version="1.0"?><Response></Response>'
+const SITE_URL = 'https://promeistars.lv'
 
 const JA_REGEX = /^\s*(jā|ja|jaa|yes|ok|labi|piekritu|да|ок|согласен)\s*[!.]*\s*$/i
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const { data: prospect } = await supabase
     .from('prospects')
-    .select('id, vards, uzvards, valoda, lapa_izveidota, telefons, whatsapp')
+    .select('id, vards, uzvards, valoda, anketa_unique_code, telefons, whatsapp')
     .eq('telefons', talrunis)
     .single()
 
@@ -42,41 +42,41 @@ export async function POST(req: NextRequest) {
 
   await supabase
     .from('prospects')
-    .update({
-      statuss: 'atbildeja',
-      pedeja_kontakts: new Date().toISOString(),
-    })
+    .update({ statuss: 'atbildeja', pedeja_kontakts: new Date().toISOString() })
     .eq('id', prospect.id)
 
   const adminWa = process.env.ADMIN_WHATSAPP
   const isJa = JA_REGEX.test(teksts.trim())
 
-  if (isJa && !prospect.lapa_izveidota) {
-    const demoUrl = await createMeistaraLapa(prospect.id)
+  if (isJa && !prospect.anketa_unique_code) {
+    const anketaCode = crypto.randomUUID()
+    const anketaUrl = `${SITE_URL}/anketa/${anketaCode}`
 
-    if (demoUrl) {
-      const valoda = (prospect.valoda === 'ru' ? 'RU' : 'LV') as 'LV' | 'RU'
-      const smsTeksts = SMS_TEKSTI[valoda].demo_gatavs(prospect.vards, demoUrl)
+    await supabase
+      .from('prospects')
+      .update({
+        anketa_unique_code: anketaCode,
+        statuss: 'anketa_nosutita',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', prospect.id)
 
-      const sendTo = kanals === 'whatsapp' && prospect.whatsapp
-        ? `whatsapp:${prospect.whatsapp.replace(/\D/g, '')}`
-        : prospect.telefons
+    const smsTeksts = prospect.valoda === 'ru'
+      ? `Отлично! Заполни анкету (займёт 3 мин): ${anketaUrl}`
+      : `Lieliski! Aizpildi anketu (3 min): ${anketaUrl}`
 
+    await twilioClient.messages.create({
+      body: smsTeksts,
+      from: process.env.TWILIO_PHONE_NUMBER!,
+      to: prospect.telefons,
+    }).catch(() => {})
+
+    if (adminWa) {
       await twilioClient.messages.create({
-        body: smsTeksts,
-        from: kanals === 'whatsapp'
-          ? `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER!}`
-          : process.env.TWILIO_PHONE_NUMBER!,
-        to: sendTo,
+        body: `🎉 JĀ! ${prospect.vards} ${prospect.uzvards} piekrita.\nAnketa: ${anketaUrl}\nTel: ${talrunis}`,
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER!}`,
+        to: `whatsapp:${adminWa}`,
       }).catch(() => {})
-
-      if (adminWa) {
-        await twilioClient.messages.create({
-          body: `🎉 JĀ! ${prospect.vards} ${prospect.uzvards} piekrita demo.\nLapa: ${demoUrl}\nTel: ${talrunis}`,
-          from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER!}`,
-          to: `whatsapp:${adminWa}`,
-        }).catch(() => {})
-      }
     }
   } else {
     if (adminWa) {

@@ -4,7 +4,7 @@ import { getSupabaseSSR } from '@/lib/supabase-server'
 import { rateLimit } from '@/lib/rate-limit'
 import type { Database } from '@/lib/database.types'
 
-const VALID_STATUSI = ['jauns', 'nosutits', 'atbildeja', 'demo_nosutits', 'maksatajs', 'atteicas']
+const VALID_STATUSI = ['jauns', 'nosutits', 'atbildeja', 'anketa_nosutita', 'gaida_apstiprinasanu', 'demo_nosutits', 'maksatajs', 'atteicas']
 
 type ProspectUpdate = Database['public']['Tables']['prospects']['Update']
 type Params = { params: Promise<{ id: string }> }
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from('prospects')
-    .select('id, vards, uzvards, telefons, whatsapp, valoda, nodarbosanas, statuss, regions, ss_url, demo_slug, demo_url, piezimes, created_at')
+    .select('*')
     .eq('id', id)
     .single()
 
@@ -64,6 +64,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (body.regions !== undefined) update.regions = body.regions
   if (body.ss_url !== undefined) update.ss_url = body.ss_url
   if (body.piezimes !== undefined) update.piezimes = body.piezimes
+  if (body.apraksts !== undefined) update.apraksts = body.apraksts
   if (body.demo_slug !== undefined) update.demo_slug = body.demo_slug
   if (body.demo_url !== undefined) update.demo_url = body.demo_url
 

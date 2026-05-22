@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
+type DarbaLaiksRinda = { diena: string; no: string; lidz: string; strada: boolean }
+
 type Prospect = {
   id: string
   vards: string
@@ -15,6 +17,19 @@ type Prospect = {
   demo_url: string | null
   piezimes: string | null
   created_at: string | null
+  anketa_aizpildita: boolean
+  anketa_apstiprinata: boolean
+  anketa_unique_code: string | null
+  email: string | null
+  apraksts: string | null
+  foto_hero: string | null
+  foto_darbs_1: string | null
+  foto_darbs_2: string | null
+  foto_darbs_3: string | null
+  foto_darbs_4: string | null
+  foto_profils: string | null
+  darba_laiki: DarbaLaiksRinda[] | null
+  pakalpojumi: string[] | null
 }
 
 type Zinojums = {
@@ -26,9 +41,10 @@ type Zinojums = {
   izveidots_at: string | null
 }
 
-const STATUSI = ['jauns', 'nosutits', 'atbildeja', 'demo_nosutits', 'maksatajs', 'atteicas']
+const STATUSI = ['jauns', 'nosutits', 'atbildeja', 'anketa_nosutita', 'gaida_apstiprinasanu', 'demo_nosutits', 'maksatajs', 'atteicas']
 const STATUSS_LABEL: Record<string, string> = {
   jauns: 'Jauns', nosutits: 'Nosūtīts', atbildeja: 'Atbildēja',
+  anketa_nosutita: 'Anketa nosūtīta', gaida_apstiprinasanu: 'Gaida apstiprin.',
   demo_nosutits: 'Demo nosūtīts', maksatajs: 'Maksātājs', atteicas: 'Atteicās',
 }
 
@@ -51,6 +67,11 @@ export default function ProspectDetailPage() {
   const [piezimes, setPiezimes] = useState('')
   const piezimesTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [anketaApraksts, setAnketaApraksts] = useState('')
+  const [approving, setApproving] = useState(false)
+  const [approveOk, setApproveOk] = useState(false)
+  const [approveErr, setApproveErr] = useState('')
+
   const fetchData = useCallback(async () => {
     const [pRes, zRes] = await Promise.all([
       fetch(`/api/crm/prospects/${id}`),
@@ -60,6 +81,7 @@ export default function ProspectDetailPage() {
       const p: Prospect = await pRes.json()
       setProspect(p)
       setPiezimes(p.piezimes ?? '')
+      setAnketaApraksts(p.apraksts ?? '')
     }
     if (zRes.ok) {
       const z: Zinojums[] = await zRes.json()
@@ -121,6 +143,25 @@ export default function ProspectDetailPage() {
     }, 800)
   }
 
+  async function handleApprove() {
+    setApproving(true)
+    setApproveErr('')
+    const res = await fetch(`/api/crm/approve-meistars/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apraksts: anketaApraksts }),
+    })
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      setApproveErr(d.error ?? 'Kļūda')
+      setApproving(false)
+      return
+    }
+    setApproveOk(true)
+    await fetchData()
+    setApproving(false)
+  }
+
   function btnClass(state: SendState, base: string) {
     if (state === 'loading') return `${base} opacity-60 cursor-wait`
     if (state === 'ok') return `${base} !bg-green-600`
@@ -138,11 +179,111 @@ export default function ProspectDetailPage() {
   if (loading) return <div className="p-8 text-gray-400 text-sm">Ielādē...</div>
   if (!prospect) return <div className="p-8 text-red-500 text-sm">Nav atrasts</div>
 
+  const showAnketa = prospect.anketa_aizpildita && !prospect.anketa_apstiprinata
+  const fotos = [
+    { key: 'hero', label: 'Hero', url: prospect.foto_hero },
+    { key: 'darbs_1', label: 'Vannas istaba', url: prospect.foto_darbs_1 },
+    { key: 'darbs_2', label: 'Caurules', url: prospect.foto_darbs_2 },
+    { key: 'darbs_3', label: 'Boilers', url: prospect.foto_darbs_3 },
+    { key: 'darbs_4', label: 'WC', url: prospect.foto_darbs_4 },
+    { key: 'profils', label: 'Profils', url: prospect.foto_profils },
+  ]
+
   return (
     <div className="p-6 max-w-3xl">
       <button onClick={() => router.back()} className="text-sm text-gray-400 hover:text-gray-700 mb-4">
         ← Atpakaļ
       </button>
+
+      {/* Anketa apstiprinasana */}
+      {showAnketa && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-lg">📋</span>
+            <h2 className="text-base font-bold text-amber-900">Anketa aizpildīta — gaida apstiprināšanu</h2>
+          </div>
+
+          {prospect.email && (
+            <p className="text-sm text-gray-600 mb-3">E-pasts: <strong>{prospect.email}</strong></p>
+          )}
+
+          {prospect.pakalpojumi && prospect.pakalpojumi.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs font-medium text-gray-500 mb-1">Pakalpojumi:</p>
+              <div className="flex flex-wrap gap-1">
+                {prospect.pakalpojumi.map(p => (
+                  <span key={p} className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Foto galerija */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {fotos.filter(f => f.url).map(f => (
+              <div key={f.key}>
+                <img src={f.url!} alt={f.label} className="w-full h-24 object-cover rounded-lg" />
+                <p className="text-xs text-gray-500 text-center mt-0.5">{f.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {prospect.darba_laiki && (
+            <div className="mb-4">
+              <p className="text-xs font-medium text-gray-500 mb-1">Darba laiki:</p>
+              <div className="text-xs text-gray-600 space-y-0.5">
+                {prospect.darba_laiki.filter(r => r.strada).map(r => (
+                  <div key={r.diena}>{r.diena}: {r.no}–{r.lidz}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 mb-4">
+            <label className="text-xs font-medium text-gray-500">Apraksts (var rediģēt):</label>
+            <textarea
+              value={anketaApraksts}
+              onChange={e => setAnketaApraksts(e.target.value)}
+              rows={4}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          {approveErr && <p className="text-red-500 text-sm mb-3">{approveErr}</p>}
+          {approveOk && <p className="text-green-600 text-sm mb-3">✓ Lapa publicēta! SMS nosūtīts meistarim.</p>}
+
+          <button
+            onClick={handleApprove}
+            disabled={approving || approveOk}
+            className="bg-green-600 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition"
+          >
+            {approving ? 'Publicē...' : approveOk ? '✓ Publicēts' : '✓ Apstiprināt un publicēt'}
+          </button>
+        </div>
+      )}
+
+      {prospect.anketa_apstiprinata && prospect.demo_url && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-green-800">✓ Lapa ir live</p>
+            <a href={prospect.demo_url} target="_blank" rel="noopener"
+              className="text-xs text-green-600 hover:underline">{prospect.demo_url}</a>
+          </div>
+          <a href={prospect.demo_url} target="_blank" rel="noopener"
+            className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition">
+            Skatīt →
+          </a>
+        </div>
+      )}
+
+      {prospect.anketa_unique_code && !prospect.anketa_aizpildita && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+          <p className="text-sm font-medium text-blue-800">📋 Anketa nosūtīta — vēl nav aizpildīta</p>
+          <p className="text-xs text-blue-600 mt-1 break-all">
+            https://promeistars.lv/anketa/{prospect.anketa_unique_code}
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
         <div className="flex items-start justify-between gap-4">
@@ -155,12 +296,6 @@ export default function ProspectDetailPage() {
               {prospect.regions && <span className="ml-3">{prospect.regions}</span>}
               <span className="ml-3 uppercase text-xs font-medium">{prospect.valoda}</span>
             </p>
-            {prospect.demo_url && (
-              <a href={prospect.demo_url} target="_blank" rel="noopener"
-                className="text-xs text-purple-600 hover:underline mt-1 inline-block">
-                {prospect.demo_url}
-              </a>
-            )}
           </div>
           <select
             value={prospect.statuss}

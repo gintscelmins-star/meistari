@@ -2,6 +2,7 @@ import { getSupabaseServer } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import { getDemoSantehnikisData } from '@/lib/demo-meistari'
 import MeistarsProfils from './MeistarsProfils'
+import MeistaraLapa from './MeistaraLapa'
 
 export default async function MeistarsPage(props: {
   params: Promise<{ slug: string }>
@@ -15,6 +16,19 @@ export default async function MeistarsPage(props: {
 
   const supabase = getSupabaseServer()
 
+  // Check approved prospect pages first
+  const { data: prospectMeistars } = await supabase
+    .from('prospects')
+    .select('id, vards, uzvards, nodarbosanas, regions, apraksts, telefons, foto_hero, foto_darbs_1, foto_darbs_2, foto_darbs_3, foto_darbs_4, foto_profils, darba_laiki, pakalpojumi')
+    .eq('demo_slug', slug)
+    .eq('anketa_apstiprinata', true)
+    .single()
+
+  if (prospectMeistars) {
+    return <MeistaraLapa meistars={prospectMeistars as Parameters<typeof MeistaraLapa>[0]['meistars']} />
+  }
+
+  // Fall back to meistari table
   const { data: meistars } = await supabase
     .from('meistari')
     .select('*')
@@ -22,30 +36,7 @@ export default async function MeistarsPage(props: {
     .eq('aktīvs', true)
     .single()
 
-  if (!meistars) {
-    const { data: prospect } = await supabase
-      .from('prospects')
-      .select('id, vards, uzvards, nodarbosanas, regions, valoda')
-      .eq('demo_slug', slug)
-      .eq('lapa_izveidota', true)
-      .single()
-
-    if (!prospect) notFound()
-
-    const demoData = getDemoSantehnikisData()
-    return (
-      <MeistarsProfils
-        {...demoData}
-        meistars={{
-          ...demoData.meistars,
-          vards: prospect.vards,
-          uzvards: prospect.uzvards,
-          specialitate: prospect.nodarbosanas === 'elektrikis' ? 'Elektriķis' : 'Santehniķis',
-        }}
-        isDemo
-      />
-    )
-  }
+  if (!meistars) notFound()
 
   const [
     { data: pakalpojumi },

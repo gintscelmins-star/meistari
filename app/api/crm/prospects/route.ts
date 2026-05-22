@@ -3,7 +3,7 @@ import { getSupabaseServer } from '@/lib/supabase'
 import { getSupabaseSSR } from '@/lib/supabase-server'
 import { rateLimit } from '@/lib/rate-limit'
 
-const VALID_STATUSI = ['jauns', 'nosutits', 'atbildeja', 'demo_nosutits', 'maksatajs', 'atteicas']
+const VALID_STATUSI = ['jauns', 'nosutits', 'atbildeja', 'anketa_nosutita', 'gaida_apstiprinasanu', 'demo_nosutits', 'maksatajs', 'atteicas']
 
 export async function GET(req: NextRequest) {
   if (!rateLimit(req)) {
@@ -49,6 +49,8 @@ export async function GET(req: NextRequest) {
     jauns: statsRaw.filter(r => r.statuss === 'jauns').length,
     nosutits: statsRaw.filter(r => r.statuss === 'nosutits').length,
     atbildeja: statsRaw.filter(r => r.statuss === 'atbildeja').length,
+    anketa_nosutita: statsRaw.filter(r => r.statuss === 'anketa_nosutita').length,
+    gaida_apstiprinasanu: statsRaw.filter(r => r.statuss === 'gaida_apstiprinasanu').length,
     demo_nosutits: statsRaw.filter(r => r.statuss === 'demo_nosutits').length,
     maksatajs: statsRaw.filter(r => r.statuss === 'maksatajs').length,
     atteicas: statsRaw.filter(r => r.statuss === 'atteicas').length,
