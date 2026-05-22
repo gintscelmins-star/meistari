@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     .from('prospects')
     .select('telefons')
     .in('telefons', telefoni)
+    .eq('dzesanas_pieprasits', false)
 
   const existingSet = new Set((existing ?? []).map(e => e.telefons))
 
