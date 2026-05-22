@@ -51,26 +51,39 @@ function parseCsv(text: string): Rinda[] {
 
   const header = (headerLine ?? '').split(sep).map(h => h.trim().toLowerCase())
 
-  const idx = {
+  const idx: Record<string, number> = {
     vards: header.findIndex(h => h.includes('vārds') || h.includes('vards') || h.includes('nosaukums')),
+    uzvards: header.findIndex(h => h.includes('uzvārds') || h.includes('uzvards')),
     telefons: header.findIndex(h => h.includes('telefon')),
     valoda: header.findIndex(h => h.includes('valoda') || h.includes('язык')),
     regions: header.findIndex(h => h.includes('reģion') || h.includes('region')),
     nodarbosanas: header.findIndex(h => h.includes('specialit') || h.includes('nodarbošan')),
   }
 
-  // Ja nav galvenes, izmanto pozicionālo secību: 0=Vārds, 1=Telefons, 2=Valoda, 3=Reģions, 4=Specialitāte
+  // Ja nav galvenes — pārbauda vai pirmā kolonna izskatās kā telefons
   if (!hasHeader) {
-    idx.vards = 0; idx.telefons = 1; idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4
+    const firstCol = dataLines[0]?.split(sep)[0]?.trim() ?? ''
+    const firstLooksLikePhone = /^[+\d]/.test(firstCol)
+    if (firstLooksLikePhone) {
+      // Viena vai vairākas kolonnas, pirmā = telefons
+      idx.telefons = 0; idx.vards = 1; idx.uzvards = -1
+      idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4
+    } else {
+      // Tradicionālā secība: Vārds, Telefons, ...
+      idx.vards = 0; idx.telefons = 1; idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4
+    }
   }
 
   return dataLines.map(line => {
     const cols = line.split(sep)
+
+    const telefons = normalizeTelefons(col(cols, idx.telefons))
+
+    // Vārds: vai atsevišķi vai pilnais vārds vienā kolonnā
     const fullName = col(cols, idx.vards)
     const spaceIdx = fullName.indexOf(' ')
     const vards = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
     const uzvards = spaceIdx > 0 ? fullName.slice(spaceIdx + 1) : ''
-    const telefons = normalizeTelefons(col(cols, idx.telefons))
 
     return {
       vards,
@@ -141,13 +154,17 @@ export default function ImportPage() {
 
       {/* Formāta apraksts */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-sm text-blue-800">
-        <p className="font-semibold mb-1">CSV formāts (tab vai komats kā atdalītājs):</p>
-        <code className="block text-xs bg-white rounded px-3 py-2 mt-2 font-mono border border-blue-100">
-          {KOLONNAS.join('\t')}
-          <br />
-          Andris Kalniņš{'\t'}+37120000000{'\t'}lv{'\t'}Rīga{'\t'}Santehniķis
+        <p className="font-semibold mb-1">CSV formāts — pietiek ar telefonu (tab vai komats):</p>
+        <code className="block text-xs bg-white rounded px-3 py-2 mt-2 font-mono border border-blue-100 whitespace-pre">
+{`# Minimāls (tikai telefons):
++37120000000
++37129000000
+
+# Pilns:
+Vārds\tTelefons\tValoda\tReģions\tSpecialitāte
+Andris Kalniņš\t+37120000000\tlv\tRīga\tSantehniķis`}
         </code>
-        <p className="mt-2 text-xs text-blue-600">Ieraksti ar tādu pašu telefona numuru tiks izlaisti (bez dublikātiem).</p>
+        <p className="mt-2 text-xs text-blue-600">Dublikāti pēc telefona — izlaisti automātiski.</p>
       </div>
 
       {/* File upload */}
@@ -162,7 +179,7 @@ export default function ImportPage() {
         {fileName && <p className="mt-2 text-xs text-gray-400">{fileName}</p>}
         {parseError && <p className="mt-2 text-xs text-red-500">{parseError}</p>}
         <p className="mt-3 text-xs text-gray-400">
-          Tukši lauki ir OK — tiks saglabāti kā tukši. Telefons automātiski formatēts uz +371XXXXXXXX.
+          Minimums: tikai telefona kolonna. Pārējie lauki neobligāti — tukšs = saglabāts kā tukšs. Telefons automātiski → +371XXXXXXXX.
         </p>
       </div>
 

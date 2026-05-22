@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   if (toInsert.length > 0) {
     const insertData = toInsert.map(r => ({
-      vards: r.vards?.trim() || r.telefons,
+      vards: r.vards?.trim() || '',
       uzvards: r.uzvards?.trim() || '',
       telefons: r.telefons,
       valoda: ['lv', 'ru', 'en'].includes(r.valoda?.trim().toLowerCase()) ? r.valoda.trim().toLowerCase() : 'lv',
