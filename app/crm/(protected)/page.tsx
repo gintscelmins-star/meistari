@@ -2,8 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { SMS_TEKSTI } from '@/lib/sms-teksti'
 
 type SendState = 'idle' | 'loading' | 'ok' | 'err'
+
+type SmsModal = {
+  prospect: Prospect
+  teksts: string
+} | null
 
 type Prospect = {
   id: string
@@ -61,6 +67,8 @@ export default function CrmPage() {
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [sendStates, setSendStates] = useState<Record<string, { sms: SendState; wa: SendState }>>({})
+  const [smsModal, setSmsModal] = useState<SmsModal>(null)
+  const [modalSending, setModalSending] = useState(false)
 
   const fetchProspects = useCallback(async () => {
     setLoading(true)
@@ -118,6 +126,51 @@ export default function CrmPage() {
         [prospectId]: { ...prev[prospectId] ?? { sms: 'idle', wa: 'idle' }, [kanals]: 'idle' },
       })), 3000)
     }
+  }
+
+  function openSmsModal(p: Prospect) {
+    const valoda = (p.valoda === 'ru' ? 'RU' : 'LV') as 'LV' | 'RU'
+    const defaultTeksts = SMS_TEKSTI[valoda].pirmais(
+      p.vards,
+      p.demo_url ?? 'promeistars.lv'
+    )
+    setSmsModal({ prospect: p, teksts: defaultTeksts })
+  }
+
+  async function submitSmsModal() {
+    if (!smsModal) return
+    setModalSending(true)
+    const { prospect, teksts } = smsModal
+
+    setSendStates(prev => ({
+      ...prev,
+      [prospect.id]: { ...prev[prospect.id] ?? { sms: 'idle', wa: 'idle' }, sms: 'loading' },
+    }))
+
+    const res = await fetch('/api/crm/send-sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prospect_id: prospect.id, custom_teksts: teksts }),
+    })
+
+    const next: SendState = res.ok ? 'ok' : 'err'
+    setSendStates(prev => ({
+      ...prev,
+      [prospect.id]: { ...prev[prospect.id] ?? { sms: 'idle', wa: 'idle' }, sms: next },
+    }))
+
+    if (res.ok) {
+      setProspects(prev =>
+        prev.map(p => p.id === prospect.id ? { ...p, statuss: 'nosutits' } : p)
+      )
+      setTimeout(() => setSendStates(prev => ({
+        ...prev,
+        [prospect.id]: { ...prev[prospect.id] ?? { sms: 'idle', wa: 'idle' }, sms: 'idle' },
+      })), 3000)
+    }
+
+    setModalSending(false)
+    setSmsModal(null)
   }
 
   async function deleteProspect(id: string) {
@@ -250,15 +303,15 @@ export default function CrmPage() {
                         return (
                           <>
                             <button
-                              onClick={() => sendMessage(p.id, 'sms')}
-                              disabled={st.sms === 'loading'}
+                              onClick={() => openSmsModal(p)}
                               className={`text-xs px-2 py-1 rounded font-medium transition ${
                                 st.sms === 'ok' ? 'bg-green-100 text-green-700' :
                                 st.sms === 'err' ? 'bg-red-100 text-red-700' :
+                                p.statuss === 'atbildeja' ? 'bg-green-100 text-green-700' :
                                 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                               }`}
                             >
-                              {st.sms === 'loading' ? '...' : st.sms === 'ok' ? '📱✓' : st.sms === 'err' ? '📱!' : '📱 SMS'}
+                              {st.sms === 'ok' ? '📱✓' : st.sms === 'err' ? '📱!' : p.statuss === 'atbildeja' ? '📱 Atbildēja ✓' : '📱 SMS'}
                             </button>
                             <button
                               onClick={() => sendMessage(p.id, 'wa')}
@@ -315,6 +368,52 @@ export default function CrmPage() {
             >
               Nākamā →
             </button>
+          </div>
+        </div>
+      )}
+      {smsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={e => { if (e.target === e.currentTarget) setSmsModal(null) }}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-gray-900">
+                📱 SMS → {smsModal.prospect.vards} {smsModal.prospect.uzvards}
+              </h2>
+              <button
+                onClick={() => setSmsModal(null)}
+                className="text-gray-400 hover:text-gray-700 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-xs text-gray-400">{smsModal.prospect.telefons}</div>
+            <textarea
+              value={smsModal.teksts}
+              onChange={e => setSmsModal(m => m ? { ...m, teksts: e.target.value } : m)}
+              rows={5}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              autoFocus
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">{smsModal.teksts.length} rakstzīmes</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSmsModal(null)}
+                  className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition"
+                >
+                  Atcelt
+                </button>
+                <button
+                  onClick={submitSmsModal}
+                  disabled={modalSending || !smsModal.teksts.trim()}
+                  className="bg-blue-600 text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
+                >
+                  {modalSending ? 'Sūta...' : 'Nosūtīt SMS'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
