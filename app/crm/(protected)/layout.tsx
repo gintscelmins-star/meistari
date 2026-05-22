@@ -23,6 +23,12 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         >
           + Jauns prospect
         </Link>
+        <Link
+          href="/crm/import"
+          className="px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition"
+        >
+          CSV imports
+        </Link>
         <div className="mt-auto">
           <p className="px-3 text-xs text-gray-400 truncate">{user.email}</p>
         </div>
