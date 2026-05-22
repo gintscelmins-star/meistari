@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { twilioClient } from '@/lib/twilio'
 import { getSupabaseServer } from '@/lib/supabase'
 
+const TWIML_OK = '<?xml version="1.0"?><Response></Response>'
+
 export async function POST(req: NextRequest) {
   const body = await req.formData()
   const no = body.get('From') as string
   const teksts = body.get('Body') as string
 
   if (!no || !teksts) {
-    return new NextResponse(
-      '<?xml version="1.0"?><Response></Response>',
-      { headers: { 'Content-Type': 'text/xml' } }
-    )
+    return new NextResponse(TWIML_OK, { headers: { 'Content-Type': 'text/xml' } })
   }
 
   const kanals = no.startsWith('whatsapp:') ? 'whatsapp' : 'sms'
@@ -21,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   const { data: prospect } = await supabase
     .from('prospects')
-    .select('*')
+    .select('id, vards, uzvards')
     .eq('telefons', talrunis)
     .single()
 
@@ -34,25 +33,13 @@ export async function POST(req: NextRequest) {
       statuss: 'nosutits',
     })
 
-    const atbilde = teksts.toLowerCase()
-    const pozitivaAtbilde =
-      atbilde.includes('jā') ||
-      atbilde.includes('ja') ||
-      atbilde.includes('да') ||
-      atbilde.includes('interesē') ||
-      atbilde.includes('интересно')
-
-    if (pozitivaAtbilde) {
-      await supabase
-        .from('prospects')
-        .update({ statuss: 'atbildeja', pedeja_kontakts: new Date().toISOString() })
-        .eq('id', prospect.id)
-    } else {
-      await supabase
-        .from('prospects')
-        .update({ pedeja_kontakts: new Date().toISOString() })
-        .eq('id', prospect.id)
-    }
+    await supabase
+      .from('prospects')
+      .update({
+        statuss: 'atbildeja',
+        pedeja_kontakts: new Date().toISOString(),
+      })
+      .eq('id', prospect.id)
 
     const adminWa = process.env.ADMIN_WHATSAPP
     if (adminWa) {
@@ -64,8 +51,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return new NextResponse(
-    '<?xml version="1.0"?><Response></Response>',
-    { headers: { 'Content-Type': 'text/xml' } }
-  )
+  return new NextResponse(TWIML_OK, { headers: { 'Content-Type': 'text/xml' } })
 }
