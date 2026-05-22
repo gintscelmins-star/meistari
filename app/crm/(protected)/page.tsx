@@ -18,6 +18,7 @@ type Prospect = {
   valoda: string
   statuss: string
   regions: string | null
+  ss_url: string | null
   demo_url: string | null
   trial_beigas: string | null
   lapa_izveidota: boolean
@@ -375,7 +376,13 @@ export default function CrmPage() {
                           className="ml-1 text-green-600" title="WhatsApp">WA</a>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{p.regions ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">
+                      {p.regions ?? '—'}
+                      {p.ss_url && (
+                        <a href={p.ss_url} target="_blank" rel="noopener noreferrer"
+                          className="ml-1.5 text-blue-500 hover:text-blue-700 font-medium" title="Atvērt ss.lv sludinājumu">ss↗</a>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span className="text-xs uppercase font-medium text-gray-500">{p.valoda}</span>
                     </td>

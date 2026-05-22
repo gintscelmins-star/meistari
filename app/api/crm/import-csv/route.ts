@@ -10,6 +10,7 @@ type CsvRinda = {
   valoda: string
   regions: string
   nodarbosanas: string
+  ss_url: string
 }
 
 function normalizeTelefons(t: string): string {
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
       valoda: ['lv', 'ru'].includes(r.valoda?.trim().toLowerCase()) ? r.valoda.trim().toLowerCase() : 'lv',
       regions: r.regions?.trim() || null,
       nodarbosanas: r.nodarbosanas?.trim() || null,
+      ss_url: r.ss_url?.trim() || null,
       statuss: 'jauns',
       gdpr_piekrits: false,
       dzesanas_pieprasits: false,

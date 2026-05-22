@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('prospects')
-    .select('id, vards, uzvards, telefons, whatsapp, valoda, statuss, regions, demo_url, trial_beigas, lapa_izveidota, piezimes, created_at', { count: 'exact' })
+    .select('id, vards, uzvards, telefons, whatsapp, valoda, statuss, regions, ss_url, demo_url, trial_beigas, lapa_izveidota, piezimes, created_at', { count: 'exact' })
     .eq('dzesanas_pieprasits', false)
     .order('created_at', { ascending: false })
     .range(page * pageSize, (page + 1) * pageSize - 1)

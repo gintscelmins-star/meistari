@@ -10,6 +10,7 @@ type Rinda = {
   valoda: string
   regions: string
   nodarbosanas: string
+  ss_url: string
 }
 
 type ImportResult = {
@@ -58,6 +59,7 @@ function parseCsv(text: string): Rinda[] {
     valoda: header.findIndex(h => h.includes('valoda') || h.includes('язык')),
     regions: header.findIndex(h => h.includes('reģion') || h.includes('region')),
     nodarbosanas: header.findIndex(h => h.includes('specialit') || h.includes('nodarbošan')),
+    ss_url: header.findIndex(h => h.includes('url') || h.includes('ss.lv') || h.includes('saite') || h.includes('avots')),
   }
 
   // Ja nav galvenes — pārbauda vai pirmā kolonna izskatās kā telefons
@@ -65,12 +67,10 @@ function parseCsv(text: string): Rinda[] {
     const firstCol = dataLines[0]?.split(sep)[0]?.trim() ?? ''
     const firstLooksLikePhone = /^[+\d]/.test(firstCol)
     if (firstLooksLikePhone) {
-      // Viena vai vairākas kolonnas, pirmā = telefons
       idx.telefons = 0; idx.vards = 1; idx.uzvards = -1
-      idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4
+      idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4; idx.ss_url = 5
     } else {
-      // Tradicionālā secība: Vārds, Telefons, ...
-      idx.vards = 0; idx.telefons = 1; idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4
+      idx.vards = 0; idx.telefons = 1; idx.valoda = 2; idx.regions = 3; idx.nodarbosanas = 4; idx.ss_url = 5
     }
   }
 
@@ -92,6 +92,7 @@ function parseCsv(text: string): Rinda[] {
       valoda: col(cols, idx.valoda) || 'lv',
       regions: col(cols, idx.regions),
       nodarbosanas: col(cols, idx.nodarbosanas),
+      ss_url: col(cols, idx.ss_url),
     }
   }).filter(r => r.telefons)
 }
@@ -160,9 +161,9 @@ export default function ImportPage() {
 +37120000000
 +37129000000
 
-# Pilns:
-Vārds\tTelefons\tValoda\tReģions\tSpecialitāte
-Andris Kalniņš\t+37120000000\tlv\tRīga\tSantehniķis`}
+# Ar SS.lv saiti:
+Vārds\tTelefons\tValoda\tReģions\tSpecialitāte\tURL
+Andris Kalniņš\t+37120000000\tlv\tRīga\tSantehniķis\thttps://ss.lv/msg/...`}
         </code>
         <p className="mt-2 text-xs text-blue-600">Dublikāti pēc telefona — izlaisti automātiski.</p>
       </div>
@@ -202,7 +203,7 @@ Andris Kalniņš\t+37120000000\tlv\tRīga\tSantehniķis`}
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {['Vārds', 'Uzvārds', 'Telefons', 'Valoda', 'Reģions', 'Specialitāte'].map(h => (
+                  {['Vārds', 'Uzvārds', 'Telefons', 'Valoda', 'Reģions', 'Specialitāte', 'URL'].map(h => (
                     <th key={h} className="text-left py-2 pr-4 text-gray-500 font-medium">{h}</th>
                   ))}
                 </tr>
@@ -216,6 +217,11 @@ Andris Kalniņš\t+37120000000\tlv\tRīga\tSantehniķis`}
                     <td className="py-1.5 pr-4 text-gray-600">{r.valoda}</td>
                     <td className="py-1.5 pr-4 text-gray-600">{r.regions}</td>
                     <td className="py-1.5 pr-4 text-gray-600">{r.nodarbosanas}</td>
+                    <td className="py-1.5 pr-4">
+                      {r.ss_url
+                        ? <a href={r.ss_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs">ss.lv ↗</a>
+                        : <span className="text-gray-300">—</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
