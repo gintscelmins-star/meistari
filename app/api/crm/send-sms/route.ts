@@ -29,10 +29,11 @@ export async function POST(req: NextRequest) {
   if (!p) return NextResponse.json({ error: 'Nav atrasts' }, { status: 404 })
 
   const valoda = (p.valoda === 'ru' ? 'RU' : 'LV') as 'LV' | 'RU'
-  const teksts = SMS_TEKSTI[valoda].pirmais(
+  const defaultTeksts = SMS_TEKSTI[valoda].pirmais(
     p.vards,
     p.demo_url ?? 'promeistars.lv'
   )
+  const teksts: string = body.custom_teksts?.trim() || defaultTeksts
 
   try {
     const msg = await twilioClient.messages.create({
