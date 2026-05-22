@@ -1,12 +1,93 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { demo_meistari } from '@/lib/demo-meistari'
 import { pakalpojumi } from '@/lib/pakalpojumi'
 import type { Valoda } from './page'
 
 type Props = { valoda: Valoda }
+
+type DbMeistars = {
+  id: string
+  vards: string
+  uzvards: string
+  nodarbosanas: string | null
+  regions: string | null
+  pakalpojumi: string[] | null
+  foto_hero: string | null
+  demo_url: string | null
+}
+
+type Kartite = {
+  id: string
+  vards: string
+  iniciāļi: string
+  specialitate_lv: string
+  specialitate_ru: string
+  regioni: string[]
+  demo_url: string
+  foto_hero: string | null
+  rating: number
+  atsauksmes_skaits: number
+  cena_no: number
+  kategorija: string
+  darba_laiks: { dienas: string[]; no: string; lidz: string; avarijas: boolean }
+  isReal: boolean
+}
+
+const SPECIALITATE_RU: Record<string, string> = {
+  santehnikis: 'Сантехник',
+  elektrikis: 'Электрик',
+}
+const SPECIALITATE_LV: Record<string, string> = {
+  santehnikis: 'Santehniķis',
+  elektrikis: 'Elektriķis',
+}
+
+function dbToKartite(p: DbMeistars): Kartite {
+  const regioni = (p.regions ?? '')
+    .split(',')
+    .map(r => r.trim().split(':')[0].trim())
+    .filter(Boolean)
+
+  return {
+    id: p.id,
+    vards: `${p.vards} ${p.uzvards}`,
+    iniciāļi: (p.vards[0] ?? '') + (p.uzvards[0] ?? ''),
+    specialitate_lv: SPECIALITATE_LV[p.nodarbosanas ?? ''] ?? 'Meistars',
+    specialitate_ru: SPECIALITATE_RU[p.nodarbosanas ?? ''] ?? 'Мастер',
+    regioni,
+    demo_url: p.demo_url ?? '#',
+    foto_hero: p.foto_hero,
+    rating: 0,
+    atsauksmes_skaits: 0,
+    cena_no: 0,
+    kategorija: p.pakalpojumi?.[0] ?? '',
+    darba_laiks: { dienas: [], no: '08:00', lidz: '20:00', avarijas: (p.pakalpojumi ?? []).includes('Avārijas 24/7') },
+    isReal: true,
+  }
+}
+
+function demoToKartite(m: typeof demo_meistari[number]): Kartite {
+  return {
+    id: m.vards,
+    vards: m.vards,
+    iniciāļi: m.iniciāļi,
+    specialitate_lv: m.specialitate_lv,
+    specialitate_ru: m.specialitate_ru,
+    regioni: m.regioni,
+    demo_url: m.subdomens,
+    foto_hero: null,
+    rating: m.rating,
+    atsauksmes_skaits: m.atsauksmes_skaits,
+    cena_no: m.cena_no,
+    kategorija: m.kategorija,
+    darba_laiks: m.darba_laiks,
+    isReal: false,
+  }
+}
 
 const REGIONI = [
   'Visi reģioni', 'Rīga', 'Jūrmala', 'Jelgava',
@@ -43,7 +124,6 @@ function formatDienas(dienas: string[]): string {
   const hasAllWeekdays = WEEKDAYS.every(d => dienas.includes(d))
   const hasSestd = dienas.includes('Sestd')
   const hasSvetd = dienas.includes('Svētd')
-
   const parts: string[] = []
   if (hasAllWeekdays) {
     parts.push('Pirmd–Piektd')
@@ -65,6 +145,14 @@ export default function MeistariGrid({ valoda }: Props) {
   const [regions, setRegions] = useState('Visi reģioni')
   const [darbaLaiks, setDarbaLaiks] = useState('jebkurš')
   const [meklesana, setMeklesana] = useState('')
+  const [dbMeistari, setDbMeistari] = useState<DbMeistars[]>([])
+
+  useEffect(() => {
+    fetch('/api/public/meistari')
+      .then(r => r.json())
+      .then(d => setDbMeistari(d.meistari ?? []))
+      .catch(() => {})
+  }, [])
 
   const apakskategorijas = useMemo(
     () => pakalpojumi.find(k => k.kategorija_lv === kat1)?.apakskategorijas ?? [],
@@ -84,10 +172,16 @@ export default function MeistariGrid({ valoda }: Props) {
 
   const hasFilter = kat1 || kat2 || kat3 || regions !== 'Visi reģioni' || darbaLaiks !== 'jebkurš' || meklesana.trim()
 
+  const allKartites: Kartite[] = useMemo(() => {
+    const realOnes = dbMeistari.map(dbToKartite)
+    const demoOnes = demo_meistari.map(demoToKartite)
+    return [...realOnes, ...demoOnes]
+  }, [dbMeistari])
+
   const filtrets = useMemo(() => {
-    return demo_meistari.filter(m => {
-      // Kategorija / pakalpojums filter
-      if (kat1) {
+    return allKartites.filter(m => {
+      // Kategorija filter (only applies to non-real demo meistari)
+      if (kat1 && !m.isReal) {
         const katObj = pakalpojumi.find(k => k.kategorija_lv === kat1)
         if (!katObj) return false
         if (kat2) {
@@ -109,11 +203,13 @@ export default function MeistariGrid({ valoda }: Props) {
       // Reģions filter
       if (regions !== 'Visi reģioni' && !m.regioni.includes(regions)) return false
 
-      // Darba laiks filter
-      if (darbaLaiks === '24-7' && !m.darba_laiks.avarijas) return false
-      if (darbaLaiks === 'sestdiena' && !m.darba_laiks.dienas.includes('Sestd')) return false
-      if (darbaLaiks === 'svetdiena' && !m.darba_laiks.dienas.includes('Svētd')) return false
-      if (darbaLaiks === 'darba-dienas' && !WEEKDAYS.some(d => m.darba_laiks.dienas.includes(d))) return false
+      // Darba laiks filter (demo only)
+      if (!m.isReal) {
+        if (darbaLaiks === '24-7' && !m.darba_laiks.avarijas) return false
+        if (darbaLaiks === 'sestdiena' && !m.darba_laiks.dienas.includes('Sestd')) return false
+        if (darbaLaiks === 'svetdiena' && !m.darba_laiks.dienas.includes('Svētd')) return false
+        if (darbaLaiks === 'darba-dienas' && !WEEKDAYS.some(d => m.darba_laiks.dienas.includes(d))) return false
+      }
 
       // Meklēšana
       if (meklesana.trim()) {
@@ -124,22 +220,16 @@ export default function MeistariGrid({ valoda }: Props) {
 
       return true
     })
-  }, [kat1, kat2, kat3, regions, darbaLaiks, meklesana, valoda])
+  }, [allKartites, kat1, kat2, kat3, regions, darbaLaiks, meklesana, valoda])
 
   return (
     <section id="meistari" className="bg-gray-50">
 
-      {/* Filtru josla — sticky zem nav */}
+      {/* Filtru josla */}
       <div className="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="mx-auto max-w-6xl px-4 py-3">
           <div className="flex flex-wrap gap-2 items-center">
-
-            {/* Kategorija — 3 pakāpes */}
-            <select
-              value={kat1}
-              onChange={e => { setKat1(e.target.value); setKat2(''); setKat3('') }}
-              className={selectCls}
-            >
+            <select value={kat1} onChange={e => { setKat1(e.target.value); setKat2(''); setKat3('') }} className={selectCls}>
               <option value="">{txt.allKat[valoda]}</option>
               {pakalpojumi.map(k => (
                 <option key={k.kategorija_lv} value={k.kategorija_lv}>
@@ -149,11 +239,7 @@ export default function MeistariGrid({ valoda }: Props) {
             </select>
 
             {kat1 && (
-              <select
-                value={kat2}
-                onChange={e => { setKat2(e.target.value); setKat3('') }}
-                className={selectCls}
-              >
+              <select value={kat2} onChange={e => { setKat2(e.target.value); setKat3('') }} className={selectCls}>
                 <option value="">{txt.allApak[valoda]}</option>
                 {apakskategorijas.map(ak => (
                   <option key={ak.nosaukums_lv} value={ak.nosaukums_lv}>
@@ -164,45 +250,24 @@ export default function MeistariGrid({ valoda }: Props) {
             )}
 
             {kat2 && (
-              <select
-                value={kat3}
-                onChange={e => setKat3(e.target.value)}
-                className={selectCls}
-              >
+              <select value={kat3} onChange={e => setKat3(e.target.value)} className={selectCls}>
                 <option value="">{txt.allPak[valoda]}</option>
                 {pakalpojumiList.map(p => (
-                  <option key={p.lv} value={p.lv}>
-                    {valoda === 'ru' ? p.ru : p.lv}
-                  </option>
+                  <option key={p.lv} value={p.lv}>{valoda === 'ru' ? p.ru : p.lv}</option>
                 ))}
               </select>
             )}
 
-            {/* Reģions */}
-            <select
-              value={regions}
-              onChange={e => setRegions(e.target.value)}
-              className={selectCls}
-            >
-              {REGIONI.map(r => (
-                <option key={r} value={r}>{r}</option>
-              ))}
+            <select value={regions} onChange={e => setRegions(e.target.value)} className={selectCls}>
+              {REGIONI.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
 
-            {/* Darba laiks */}
-            <select
-              value={darbaLaiks}
-              onChange={e => setDarbaLaiks(e.target.value)}
-              className={selectCls}
-            >
+            <select value={darbaLaiks} onChange={e => setDarbaLaiks(e.target.value)} className={selectCls}>
               {DARBA_LAIKU_OPCIJAS.map(o => (
-                <option key={o.id} value={o.id}>
-                  {valoda === 'ru' ? o.ru : o.lv}
-                </option>
+                <option key={o.id} value={o.id}>{valoda === 'ru' ? o.ru : o.lv}</option>
               ))}
             </select>
 
-            {/* Meklēšana */}
             <input
               type="text"
               value={meklesana}
@@ -211,12 +276,8 @@ export default function MeistariGrid({ valoda }: Props) {
               className="flex-1 min-w-[180px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
-            {/* Notīrīt */}
             {hasFilter && (
-              <button
-                onClick={clearFilters}
-                className="text-xs text-blue-600 font-semibold hover:underline whitespace-nowrap px-1"
-              >
+              <button onClick={clearFilters} className="text-xs text-blue-600 font-semibold hover:underline whitespace-nowrap px-1">
                 {txt.clear[valoda]}
               </button>
             )}
@@ -231,10 +292,7 @@ export default function MeistariGrid({ valoda }: Props) {
             <div className="text-4xl mb-4">🔍</div>
             <p className="text-xl font-semibold text-gray-800">{txt.empty1[valoda]}</p>
             <p className="text-gray-400 mt-2">{txt.empty2[valoda]}</p>
-            <Link
-              href="/register"
-              className="mt-6 inline-flex items-center rounded-full bg-blue-600 text-white px-6 py-3 text-sm font-semibold hover:bg-blue-700 transition-colors"
-            >
+            <Link href="/register" className="mt-6 inline-flex items-center rounded-full bg-blue-600 text-white px-6 py-3 text-sm font-semibold hover:bg-blue-700 transition-colors">
               {txt.emptyBtn[valoda]}
             </Link>
           </div>
@@ -246,13 +304,29 @@ export default function MeistariGrid({ valoda }: Props) {
 
               return (
                 <div
-                  key={m.vards}
+                  key={m.id}
                   className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col"
                 >
+                  {m.isReal && (
+                    <span className="self-start mb-2 text-xs font-semibold bg-green-100 text-green-700 rounded-full px-2.5 py-0.5">
+                      ✓ Verificēts
+                    </span>
+                  )}
+
                   {/* Galvene */}
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                      {m.iniciāļi}
+                    <div className="flex-shrink-0 w-11 h-11 rounded-full overflow-hidden bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                      {m.foto_hero ? (
+                        <Image
+                          src={m.foto_hero}
+                          width={44}
+                          height={44}
+                          alt={m.vards}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{m.iniciāļi}</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{m.vards}</p>
@@ -265,37 +339,45 @@ export default function MeistariGrid({ valoda }: Props) {
                   {/* Reģioni */}
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {m.regioni.map(r => (
-                      <span key={r} className="rounded-full bg-gray-100 text-gray-500 text-xs px-2.5 py-0.5">
-                        {r}
-                      </span>
+                      <span key={r} className="rounded-full bg-gray-100 text-gray-500 text-xs px-2.5 py-0.5">{r}</span>
                     ))}
                   </div>
 
-                  {/* Darba laiks */}
-                  <div className="mt-3 flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-gray-500">
-                      {dienasStr} {m.darba_laiks.no}–{m.darba_laiks.lidz}
-                    </span>
-                    {m.darba_laiks.avarijas && (
+                  {/* Darba laiks + rating (demo only) */}
+                  {!m.isReal && (
+                    <>
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-gray-500">
+                          {dienasStr} {m.darba_laiks.no}–{m.darba_laiks.lidz}
+                        </span>
+                        {m.darba_laiks.avarijas && (
+                          <span className="rounded-full bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5">
+                            {txt.emergency[valoda]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-amber-400 text-sm leading-none">★</span>
+                        <span className="text-sm font-semibold text-gray-800">{m.rating.toFixed(1)}</span>
+                        <span className="text-xs text-gray-400">({m.atsauksmes_skaits} {txt.reviews[valoda]})</span>
+                        <span className="ml-auto text-sm font-semibold text-gray-900">
+                          {txt.from[valoda]} €{m.cena_no}{txt.per_h[valoda]}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {m.isReal && m.darba_laiks.avarijas && (
+                    <div className="mt-3">
                       <span className="rounded-full bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5">
                         {txt.emergency[valoda]}
                       </span>
-                    )}
-                  </div>
-
-                  {/* Reitings + cena */}
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="text-amber-400 text-sm leading-none">★</span>
-                    <span className="text-sm font-semibold text-gray-800">{m.rating.toFixed(1)}</span>
-                    <span className="text-xs text-gray-400">({m.atsauksmes_skaits} {txt.reviews[valoda]})</span>
-                    <span className="ml-auto text-sm font-semibold text-gray-900">
-                      {txt.from[valoda]} €{m.cena_no}{txt.per_h[valoda]}
-                    </span>
-                  </div>
+                    </div>
+                  )}
 
                   {/* CTA */}
                   <Link
-                    href={m.subdomens}
+                    href={m.demo_url}
                     className="mt-4 block w-full text-center rounded-full border border-blue-600 text-blue-600 text-sm font-semibold py-2 hover:bg-blue-600 hover:text-white transition-colors"
                   >
                     {txt.profile[valoda]}
