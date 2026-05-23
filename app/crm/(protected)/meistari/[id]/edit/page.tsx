@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { pilsetas } from '@/lib/latvijas-pilsetas'
 import { slugify } from '@/lib/slugify'
+import { generateAprakstsPrompt, generateTulkojumsPrompt } from '@/lib/ai-prompt-generator'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +145,15 @@ export default function MeistarsEditPage() {
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null)
   const [rigaRajoniOpen, setRigaRajoniOpen] = useState(false)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  // AI modal state
+  const [aiModal, setAiModal] = useState(false)
+  const [aiMode, setAiMode] = useState<'manual' | 'auto'>('manual')
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiResult, setAiResult] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [copied, setCopied] = useState(false)
 
   const fetchData = useCallback(async () => {
     const res = await fetch(`/api/crm/meistari/${id}`)
@@ -317,6 +327,79 @@ export default function MeistarsEditPage() {
       body: JSON.stringify({ slot }),
     })
     setFotos(f => ({ ...f, [slot]: null }))
+  }
+
+  // ─── AI modal ────────────────────────────────────────────────────────────────
+
+  function openAiModal() {
+    if (!form) return
+    const prompt = generateAprakstsPrompt({
+      vards: form.vards,
+      uzvards: form.uzvards,
+      kategorijas: form.kategorijas,
+      nodarbosanas: form.nodarbosanas || null,
+      pieredze_gadi: form.pieredze_gadi ? Number(form.pieredze_gadi) : null,
+      regions: form.regions,
+      darba_laiki: form.darba_laiki,
+      avarijas_24_7: form.avarijas_24_7,
+      pakalpojumi_detail: pakalpojumi.map(p => ({ nosaukums: p.nosaukums })),
+      sertificets: form.sertificets,
+    })
+    setAiPrompt(prompt)
+    setAiResult('')
+    setAiError('')
+    setAiModal(true)
+  }
+
+  async function autoGenerate() {
+    setAiGenerating(true)
+    setAiError('')
+    try {
+      const res = await fetch('/api/ai/generate-apraksts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Kļūda')
+      setAiResult(data.apraksts)
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Kļūda')
+    } finally {
+      setAiGenerating(false)
+    }
+  }
+
+  async function translateToLv() {
+    if (!aiResult.trim()) return
+    setAiGenerating(true)
+    setAiError('')
+    try {
+      const res = await fetch('/api/ai/generate-apraksts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: generateTulkojumsPrompt(aiResult) }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Kļūda')
+      setAiResult(data.apraksts)
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Kļūda')
+    } finally {
+      setAiGenerating(false)
+    }
+  }
+
+  async function copyPrompt() {
+    await navigator.clipboard.writeText(aiPrompt)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function applyAiResult() {
+    if (!aiResult.trim()) return
+    set('apraksts', aiResult.trim())
+    setAiModal(false)
   }
 
   // ─── Save ────────────────────────────────────────────────────────────────────
@@ -627,10 +710,16 @@ export default function MeistarsEditPage() {
         <section className="bg-white border border-gray-200 rounded-xl p-6">
           <SectionHeader n={9} title="Apraksts par sevi" />
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">
-              Apraksts <span className="text-red-500">*</span>
-              <span className="ml-2 font-normal text-gray-400">(var rakstīt krieviski)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-gray-600">
+                Apraksts <span className="text-red-500">*</span>
+                <span className="ml-2 font-normal text-gray-400">(var rakstīt krieviski)</span>
+              </label>
+              <button type="button" onClick={openAiModal}
+                className="px-3 py-1 text-xs font-semibold rounded-lg bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition">
+                ✨ Ģenerēt ar AI
+              </button>
+            </div>
             <textarea value={form.apraksts} onChange={e => set('apraksts', e.target.value)}
               rows={5} maxLength={3000}
               placeholder="Esmu profesionāls santehniķis ar 15+ gadu pieredzi..."
@@ -807,6 +896,112 @@ export default function MeistarsEditPage() {
         </section>
 
       </div>
+
+      {/* ── AI Apraksta modālis ── */}
+      {aiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col gap-0 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-900">✨ AI apraksta ģenerators</h3>
+              <button type="button" onClick={() => setAiModal(false)}
+                className="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
+            </div>
+
+            {/* Mode toggle */}
+            <div className="flex border-b border-gray-100">
+              {(['manual', 'auto'] as const).map(m => (
+                <button key={m} type="button" onClick={() => setAiMode(m)}
+                  className={`flex-1 py-2.5 text-xs font-semibold transition ${
+                    aiMode === m
+                      ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-500'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}>
+                  {m === 'manual' ? '📋 Manuālais režīms (Claude.ai)' : '⚡ Auto režīms (API)'}
+                </button>
+              ))}
+            </div>
+
+            <div className="px-6 py-5 flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+              {aiMode === 'manual' ? (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-gray-600">1. Nokopē šo prompt:</p>
+                      <button type="button" onClick={copyPrompt}
+                        className={`px-2.5 py-1 text-xs rounded-lg border transition ${copied ? 'bg-green-50 text-green-700 border-green-300' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}>
+                        {copied ? '✓ Nokopēts!' : '📋 Kopēt'}
+                      </button>
+                    </div>
+                    <textarea readOnly value={aiPrompt} rows={6}
+                      className="border rounded-lg px-3 py-2 text-xs text-gray-600 bg-gray-50 resize-none font-mono" />
+                  </div>
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-xs text-blue-700">
+                    <p className="font-semibold mb-1">2. Atvērt Claude.ai un ielīmēt prompt:</p>
+                    <a href="https://claude.ai" target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 underline font-medium">
+                      🔗 Atvērt Claude.ai
+                    </a>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs font-medium text-gray-600">3. Ielīmē Claude atbildi šeit:</p>
+                    <textarea value={aiResult} onChange={e => setAiResult(e.target.value)}
+                      rows={4} placeholder="Ielīmē ģenerēto aprakstu šeit..."
+                      className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-gray-600">Ģenerētais apraksts:</p>
+                      <button type="button" onClick={autoGenerate} disabled={aiGenerating}
+                        className="px-3 py-1 text-xs font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 transition">
+                        {aiGenerating ? 'Ģenerē...' : '⚡ Ģenerēt'}
+                      </button>
+                    </div>
+                    {!aiResult && !aiGenerating && (
+                      <p className="text-xs text-gray-400 italic">Nospied &quot;Ģenerēt&quot; lai izveidotu aprakstu</p>
+                    )}
+                    {aiGenerating && (
+                      <p className="text-xs text-purple-600 animate-pulse">Saziņa ar AI...</p>
+                    )}
+                    {aiResult && (
+                      <textarea value={aiResult} onChange={e => setAiResult(e.target.value)}
+                        rows={5}
+                        className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none" />
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* RU→LV translate */}
+              {aiResult && (
+                <button type="button" onClick={translateToLv} disabled={aiGenerating}
+                  className="self-start px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 disabled:opacity-50 transition">
+                  {aiGenerating ? 'Tulko...' : '🇱🇻 Iztulkot uz latviešu valodu'}
+                </button>
+              )}
+
+              {aiError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{aiError}</p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+              <button type="button" onClick={() => setAiModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition">
+                Atcelt
+              </button>
+              <button type="button" onClick={applyAiResult} disabled={!aiResult.trim()}
+                className="px-5 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 transition">
+                Saglabāt aprakstu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Fixed bottom bar ── */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-between z-30">
