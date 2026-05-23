@@ -4,6 +4,8 @@ import { getSupabaseSSR } from '@/lib/supabase-server'
 import { rateLimit } from '@/lib/rate-limit'
 
 const VALID_STATUSI = ['jauns', 'nosutits', 'atbildeja', 'anketa_nosutita', 'gaida_apstiprinasanu', 'demo_nosutits', 'maksatajs', 'atteicas']
+const VALID_FILTERS = ['melnraksti', 'publiceti', 'trial_beidzas', 'featured'] as const
+type SpecialFilter = typeof VALID_FILTERS[number]
 
 export async function GET(req: NextRequest) {
   if (!rateLimit(req)) {
@@ -18,17 +20,26 @@ export async function GET(req: NextRequest) {
   const page = Math.max(0, parseInt(searchParams.get('page') ?? '0'))
   const pageSize = Math.min(100, parseInt(searchParams.get('pageSize') ?? '50'))
   const statuss = searchParams.get('statuss')
+  const filter = searchParams.get('filter') as SpecialFilter | null
 
   const supabase = getSupabaseServer()
 
   let query = supabase
     .from('prospects')
-    .select('id, vards, uzvards, telefons, whatsapp, valoda, statuss, regions, ss_url, demo_url, trial_beigas, lapa_izveidota, piezimes, created_at', { count: 'exact' })
+    .select('id, vards, uzvards, telefons, whatsapp, valoda, statuss, regions, ss_url, demo_url, trial_beigas, lapa_izveidota, piezimes, created_at, publiskets, publiskets_datums', { count: 'exact' })
     .eq('dzesanas_pieprasits', false)
     .order('created_at', { ascending: false })
     .range(page * pageSize, (page + 1) * pageSize - 1)
 
-  if (statuss && VALID_STATUSI.includes(statuss)) {
+  if (filter && VALID_FILTERS.includes(filter)) {
+    if (filter === 'melnraksti') query = query.eq('publiskets', false)
+    if (filter === 'publiceti') query = query.eq('publiskets', true)
+    if (filter === 'trial_beidzas') {
+      const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+      query = query.not('trial_beigas', 'is', null).lte('trial_beigas', threeDaysFromNow)
+    }
+    if (filter === 'featured') query = query.eq('featured', true)
+  } else if (statuss && VALID_STATUSI.includes(statuss)) {
     query = query.eq('statuss', statuss)
   }
 
@@ -38,12 +49,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const statsQuery = await supabase
-    .from('prospects')
-    .select('statuss')
-    .eq('dzesanas_pieprasits', false)
+  const [statsQuery, meistariStatsQuery] = await Promise.all([
+    supabase.from('prospects').select('statuss').eq('dzesanas_pieprasits', false),
+    supabase.from('prospects').select('publiskets, featured, trial_beigas').eq('dzesanas_pieprasits', false),
+  ])
 
   const statsRaw = statsQuery.data ?? []
+  const meistariRaw = meistariStatsQuery.data ?? []
+  const threeDays = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+
   const stats = {
     total: statsRaw.length,
     jauns: statsRaw.filter(r => r.statuss === 'jauns').length,
@@ -54,6 +68,9 @@ export async function GET(req: NextRequest) {
     demo_nosutits: statsRaw.filter(r => r.statuss === 'demo_nosutits').length,
     maksatajs: statsRaw.filter(r => r.statuss === 'maksatajs').length,
     atteicas: statsRaw.filter(r => r.statuss === 'atteicas').length,
+    publiceti: meistariRaw.filter(r => r.publiskets === true).length,
+    trial_beidzas: meistariRaw.filter(r => r.trial_beigas && r.trial_beigas <= threeDays).length,
+    featured: meistariRaw.filter(r => r.featured === true).length,
   }
 
   return NextResponse.json({ prospects: prospects ?? [], total: count ?? 0, stats })
