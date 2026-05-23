@@ -111,6 +111,12 @@ export type Database = {
         Update: { id?: string; prospect_id?: string; teksts?: string | null; kanals?: string; virziens?: string; statuss?: string; izveidots_at?: string | null }
         Relationships: [{ foreignKeyName: "zinojumi_prospect_id_fkey"; columns: ["prospect_id"]; isOneToOne: false; referencedRelation: "prospects"; referencedColumns: ["id"] }]
       }
+      prospect_atsauksmes: {
+        Row: { id: string; prospect_id: string; autors: string; teksts: string; vertejums: number | null; datums: string | null; created_at: string | null }
+        Insert: { id?: string; prospect_id: string; autors: string; teksts: string; vertejums?: number | null; datums?: string | null; created_at?: string | null }
+        Update: { id?: string; prospect_id?: string; autors?: string; teksts?: string; vertejums?: number | null; datums?: string | null; created_at?: string | null }
+        Relationships: [{ foreignKeyName: "prospect_atsauksmes_prospect_id_fkey"; columns: ["prospect_id"]; isOneToOne: false; referencedRelation: "prospects"; referencedColumns: ["id"] }]
+      }
       prospects: {
         Row: {
           id: string; vards: string; uzvards: string; telefons: string;
@@ -124,6 +130,7 @@ export type Database = {
           apraksts: string | null;
           darba_laiki: Json | null;
           pakalpojumi: string[] | null;
+          pakalpojumi_detail: Json | null;
           anketa_aizpildita: boolean; anketa_apstiprinata: boolean;
           anketa_unique_code: string | null;
           maksatajs: boolean; plans: string | null;
@@ -131,7 +138,23 @@ export type Database = {
           ss_url: string | null; piezimes: string | null;
           gdpr_piekrits: boolean; gdpr_datums: string | null;
           dzesanas_pieprasits: boolean; dzesanas_datums: string | null;
-          updated_at: string | null; created_at: string | null
+          updated_at: string | null; created_at: string | null;
+          pieredze_gadi: number | null;
+          sia_nosaukums: string | null;
+          sia_reg: string | null;
+          sertificets: boolean | null;
+          avarijas_24_7: boolean | null;
+          cena_no: number | null;
+          cena_lidz: number | null;
+          hero_virsraksts: string | null;
+          hero_apaksteksts: string | null;
+          meta_title: string | null;
+          meta_description: string | null;
+          kategorijas: string[] | null;
+          featured: boolean | null;
+          featured_lidz: string | null;
+          publiskets: boolean | null;
+          publiskets_datums: string | null;
         }
         Insert: {
           id?: string; vards: string; uzvards: string; telefons: string;
@@ -145,6 +168,7 @@ export type Database = {
           apraksts?: string | null;
           darba_laiki?: Json | null;
           pakalpojumi?: string[] | null;
+          pakalpojumi_detail?: Json | null;
           anketa_aizpildita?: boolean; anketa_apstiprinata?: boolean;
           anketa_unique_code?: string | null;
           maksatajs?: boolean; plans?: string | null;
@@ -152,7 +176,23 @@ export type Database = {
           ss_url?: string | null; piezimes?: string | null;
           gdpr_piekrits?: boolean; gdpr_datums?: string | null;
           dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null;
-          updated_at?: string | null; created_at?: string | null
+          updated_at?: string | null; created_at?: string | null;
+          pieredze_gadi?: number | null;
+          sia_nosaukums?: string | null;
+          sia_reg?: string | null;
+          sertificets?: boolean | null;
+          avarijas_24_7?: boolean | null;
+          cena_no?: number | null;
+          cena_lidz?: number | null;
+          hero_virsraksts?: string | null;
+          hero_apaksteksts?: string | null;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          kategorijas?: string[] | null;
+          featured?: boolean | null;
+          featured_lidz?: string | null;
+          publiskets?: boolean | null;
+          publiskets_datums?: string | null;
         }
         Update: {
           id?: string; vards?: string; uzvards?: string; telefons?: string;
@@ -166,6 +206,7 @@ export type Database = {
           apraksts?: string | null;
           darba_laiki?: Json | null;
           pakalpojumi?: string[] | null;
+          pakalpojumi_detail?: Json | null;
           anketa_aizpildita?: boolean; anketa_apstiprinata?: boolean;
           anketa_unique_code?: string | null;
           maksatajs?: boolean; plans?: string | null;
@@ -173,7 +214,23 @@ export type Database = {
           ss_url?: string | null; piezimes?: string | null;
           gdpr_piekrits?: boolean; gdpr_datums?: string | null;
           dzesanas_pieprasits?: boolean; dzesanas_datums?: string | null;
-          updated_at?: string | null; created_at?: string | null
+          updated_at?: string | null; created_at?: string | null;
+          pieredze_gadi?: number | null;
+          sia_nosaukums?: string | null;
+          sia_reg?: string | null;
+          sertificets?: boolean | null;
+          avarijas_24_7?: boolean | null;
+          cena_no?: number | null;
+          cena_lidz?: number | null;
+          hero_virsraksts?: string | null;
+          hero_apaksteksts?: string | null;
+          meta_title?: string | null;
+          meta_description?: string | null;
+          kategorijas?: string[] | null;
+          featured?: boolean | null;
+          featured_lidz?: string | null;
+          publiskets?: boolean | null;
+          publiskets_datums?: string | null;
         }
         Relationships: []
       }
