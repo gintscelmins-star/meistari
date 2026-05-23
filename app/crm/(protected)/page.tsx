@@ -24,6 +24,8 @@ type Prospect = {
   lapa_izveidota: boolean
   piezimes: string | null
   created_at: string | null
+  publiskets: boolean | null
+  publiskets_datums: string | null
   _zinojumi_count?: number
 }
 
@@ -46,6 +48,9 @@ type Stats = {
   demo_nosutits: number
   maksatajs: number
   atteicas: number
+  publiceti: number
+  trial_beidzas: number
+  featured: number
 }
 
 const STATUSI = ['jauns', 'nosutits', 'atbildeja', 'anketa_nosutita', 'gaida_apstiprinasanu', 'demo_nosutits', 'maksatajs', 'atteicas'] as const
@@ -92,11 +97,19 @@ export default function CrmPage() {
   const [bulkResult, setBulkResult] = useState<string | null>(null)
   const [bulkSmsModal, setBulkSmsModal] = useState<BulkSmsModal>(null)
 
+  const SPECIAL_FILTERS = ['melnraksti', 'publiceti', 'trial_beidzas', 'featured']
+
   const fetchProspects = useCallback(async () => {
     setLoading(true)
     setSelected(new Set())
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) })
-    if (activeTab !== 'visi') params.set('statuss', activeTab)
+    if (activeTab !== 'visi') {
+      if (SPECIAL_FILTERS.includes(activeTab)) {
+        params.set('filter', activeTab)
+      } else {
+        params.set('statuss', activeTab)
+      }
+    }
     const res = await fetch(`/api/crm/prospects?${params}`)
     if (res.ok) {
       const data = await res.json()
@@ -105,6 +118,7 @@ export default function CrmPage() {
       setStats(data.stats)
     }
     setLoading(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, activeTab])
 
   useEffect(() => { fetchProspects() }, [fetchProspects])
@@ -251,6 +265,10 @@ export default function CrmPage() {
     { key: 'gaida_apstiprinasanu', label: 'Gaida apstiprin.', count: stats?.gaida_apstiprinasanu },
     { key: 'maksatajs', label: 'Maksātāji', count: stats?.maksatajs },
     { key: 'atteicas', label: 'Atteicās', count: stats?.atteicas },
+    { key: 'publiceti', label: '✅ Publicēti', count: stats?.publiceti },
+    { key: 'melnraksti', label: 'Melnraksti', count: undefined },
+    { key: 'trial_beidzas', label: '⏰ Trial beidzas', count: stats?.trial_beidzas },
+    { key: 'featured', label: '⭐ Featured', count: stats?.featured },
   ]
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -354,6 +372,7 @@ export default function CrmPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Reģions</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Valoda</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statuss</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Publicēts</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Datums</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Trial</th>
                 <th className="px-4 py-3"></th>
@@ -400,6 +419,11 @@ export default function CrmPage() {
                         className={`text-xs font-medium rounded-full px-2 py-1 border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${STATUSS_COLOR[p.statuss] ?? ''}`}>
                         {STATUSI.map(s => <option key={s} value={s}>{STATUSS_LABEL[s]}</option>)}
                       </select>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {p.publiskets
+                        ? <span title={p.publiskets_datums ? new Date(p.publiskets_datums).toLocaleDateString('lv') : ''}>✅</span>
+                        : <span className="text-gray-300 text-xs">❌</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs">
                       {p.created_at ? new Date(p.created_at).toLocaleDateString('lv') : '—'}
