@@ -2,11 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServer } from '@/lib/supabase'
 import { getSupabaseSSR } from '@/lib/supabase-server'
 import { rateLimit } from '@/lib/rate-limit'
+import type { Database } from '@/lib/database.types'
 
 const VALID_SLOTS = ['hero', 'darbs_1', 'darbs_2', 'darbs_3', 'darbs_4', 'profils'] as const
 type FotoSlot = (typeof VALID_SLOTS)[number]
+type ProspectUpdate = Database['public']['Tables']['prospects']['Update']
 
 type Params = { params: Promise<{ id: string }> }
+
+function buildFotoUpdate(slot: FotoSlot, url: string | null): ProspectUpdate {
+  const ts = new Date().toISOString()
+  if (slot === 'hero')    return { updated_at: ts, foto_hero: url }
+  if (slot === 'darbs_1') return { updated_at: ts, foto_darbs_1: url }
+  if (slot === 'darbs_2') return { updated_at: ts, foto_darbs_2: url }
+  if (slot === 'darbs_3') return { updated_at: ts, foto_darbs_3: url }
+  if (slot === 'darbs_4') return { updated_at: ts, foto_darbs_4: url }
+  return { updated_at: ts, foto_profils: url }
+}
 
 export async function POST(req: NextRequest, { params }: Params) {
   if (!rateLimit(req)) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
@@ -54,19 +66,11 @@ export async function POST(req: NextRequest, { params }: Params) {
   const url = publicData?.publicUrl
   if (!url) return NextResponse.json({ error: 'Neizdevās iegūt URL' }, { status: 500 })
 
-  // Add cache-bust param so stale browser cache doesn't show old image
   const urlWithBust = `${url}?t=${Date.now()}`
 
-  const colMap: Record<FotoSlot, string> = {
-    hero: 'foto_hero', darbs_1: 'foto_darbs_1', darbs_2: 'foto_darbs_2',
-    darbs_3: 'foto_darbs_3', darbs_4: 'foto_darbs_4', profils: 'foto_profils',
-  }
-  const col = colMap[slot as FotoSlot]
-
-  await supabase.from('prospects').update({
-    [col]: urlWithBust,
-    updated_at: new Date().toISOString(),
-  }).eq('id', id)
+  await supabase.from('prospects')
+    .update(buildFotoUpdate(slot as FotoSlot, urlWithBust))
+    .eq('id', id)
 
   return NextResponse.json({ url: urlWithBust })
 }
@@ -86,15 +90,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
 
   const supabase = getSupabaseServer()
-  const colMap: Record<FotoSlot, string> = {
-    hero: 'foto_hero', darbs_1: 'foto_darbs_1', darbs_2: 'foto_darbs_2',
-    darbs_3: 'foto_darbs_3', darbs_4: 'foto_darbs_4', profils: 'foto_profils',
-  }
 
-  await supabase.from('prospects').update({
-    [colMap[slot as FotoSlot]]: null,
-    updated_at: new Date().toISOString(),
-  }).eq('id', id)
+  await supabase.from('prospects')
+    .update(buildFotoUpdate(slot as FotoSlot, null))
+    .eq('id', id)
 
   return NextResponse.json({ ok: true })
 }
