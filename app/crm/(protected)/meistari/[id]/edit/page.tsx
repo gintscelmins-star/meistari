@@ -146,6 +146,10 @@ export default function MeistarsEditPage() {
   const [rigaRajoniOpen, setRigaRajoniOpen] = useState(false)
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
+  // Publicēšana
+  const [publishedAt, setPublishedAt] = useState<string | null>(null)
+  const [publishing, setPublishing] = useState(false)
+
   // AI modal state
   const [aiModal, setAiModal] = useState(false)
   const [aiMode, setAiMode] = useState<'manual' | 'auto'>('manual')
@@ -188,6 +192,8 @@ export default function MeistarsEditPage() {
       featured_lidz: p.featured_lidz ? p.featured_lidz.slice(0, 10) : '',
       publiskets: !!p.publiskets,
     })
+
+    setPublishedAt(p.publiskets_datums ?? null)
 
     setFotos({
       hero: p.foto_hero ?? null, darbs_1: p.foto_darbs_1 ?? null,
@@ -400,6 +406,63 @@ export default function MeistarsEditPage() {
     if (!aiResult.trim()) return
     set('apraksts', aiResult.trim())
     setAiModal(false)
+  }
+
+  // ─── Publish / Unpublish ──────────────────────────────────────────────────────
+
+  async function handlePublish() {
+    if (!form) return
+    const ok = window.confirm(
+      `Publicēt ${form.vards} ${form.uzvards} lapu?\n\n` +
+      `URL: promeistars.lv/meistari/${form.demo_slug}\n\n` +
+      `Meistars saņems SMS ar linku.\n` +
+      `Pārliecinies, ka forma ir saglabāta!`
+    )
+    if (!ok) return
+
+    setPublishing(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/crm/meistari/${id}/publish`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.errors ? data.errors.join(', ') : (data.error ?? 'Kļūda'))
+        return
+      }
+      set('publiskets', true)
+      setPublishedAt(new Date().toISOString())
+      setSaveMsg(`Publicēts! ${data.url}`)
+      setTimeout(() => setSaveMsg(''), 5000)
+    } catch {
+      setError('Kļūda publicēšanā')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  async function handleUnpublish() {
+    if (!form) return
+    const ok = window.confirm(`Noņemt "${form.vards} ${form.uzvards}" no publicēšanas?\n\nLapa kļūs nepieejama.`)
+    if (!ok) return
+
+    setPublishing(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/crm/meistari/${id}/unpublish`, { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error ?? 'Kļūda')
+        return
+      }
+      set('publiskets', false)
+      setPublishedAt(null)
+      setSaveMsg('Noņemts no publicēšanas')
+      setTimeout(() => setSaveMsg(''), 3000)
+    } catch {
+      setError('Kļūda')
+    } finally {
+      setPublishing(false)
+    }
   }
 
   // ─── Save ────────────────────────────────────────────────────────────────────
@@ -1005,9 +1068,25 @@ export default function MeistarsEditPage() {
 
       {/* ── Fixed bottom bar ── */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-between z-30">
-        <div>
+        <div className="flex items-center gap-4">
+          {form.publiskets ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-green-600 font-semibold">
+                ✅ Publicēts{publishedAt ? ` ${new Date(publishedAt).toLocaleDateString('lv')}` : ''}
+              </span>
+              <button type="button" onClick={handleUnpublish} disabled={publishing}
+                className="text-xs text-red-500 hover:text-red-700 underline disabled:opacity-50">
+                Noņemt
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={handlePublish} disabled={publishing || saving}
+              className="px-4 py-2 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition">
+              {publishing ? 'Publicē...' : '📢 Publicēt lapu'}
+            </button>
+          )}
           {saveMsg && <span className="text-sm text-green-600 font-medium">{saveMsg}</span>}
-          {error && <span className="text-sm text-red-500">{error}</span>}
+          {error && <span className="text-sm text-red-500 max-w-xs truncate">{error}</span>}
         </div>
         <div className="flex gap-3">
           <button type="button" onClick={() => save(false)} disabled={saving}
