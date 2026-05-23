@@ -259,10 +259,16 @@ export default function CrmPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-gray-900">Prospects</h1>
-        <a href="/crm/prospects/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
-          + Jauns
-        </a>
+        <div className="flex gap-2">
+          <a href="/crm/meistari/new"
+            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
+            + Pievienot meistaru
+          </a>
+          <a href="/crm/prospects/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+            + Jauns prospect
+          </a>
+        </div>
       </div>
 
       {stats && (
@@ -432,8 +438,10 @@ export default function CrmPage() {
                           <a href={p.demo_url} target="_blank" rel="noopener"
                             className="text-xs text-purple-600 hover:underline px-1">Demo</a>
                         )}
+                        <Link href={`/crm/meistari/${p.id}/edit`}
+                          className="text-xs text-purple-600 hover:text-purple-800 transition px-1" title="Pilnā kartīte">🪪</Link>
                         <Link href={`/crm/prospects/${p.id}/edit`}
-                          className="text-xs text-gray-500 hover:text-gray-800 transition px-1" title="Rediģēt">✏️</Link>
+                          className="text-xs text-gray-500 hover:text-gray-800 transition px-1" title="Pamata rediģēšana">✏️</Link>
                         <button onClick={() => deleteProspect(p.id)}
                           className="text-xs text-red-400 hover:text-red-600 transition px-1">✕</button>
                       </div>
