@@ -113,11 +113,29 @@ STOP pie: TypeScript error, build fail
 - /api/crm/approve-meistars/[id] — apstiprina meistaru (lapa_izveidota=true)
 - DB: nodarbosanas constraints atcelti (jebkāds teksts atļauts)
 
-### ⬜ Sprint 6 — Meistara admin panelis (daļēji)
+### ✅ Sprint 6 — Meistara admin panelis (daļēji)
 - /admin — profila, foto, pakalpojumi, darba laiki redaktori (uzbūvēti)
 - /api/calendar — Google Calendar OAuth (uzbūvēts, nav testēts end-to-end)
 - /api/booking — rezervāciju pieņemšana (uzbūvēts, nav savienots ar UI pilnībā)
 - TODO: Atsauksmes UI (tabula ir, UI nav)
+
+### ✅ Sprint 6E — Brand rebrand
+- components/Logo.tsx, Header.tsx, Footer.tsx
+- Root layout globālie meta tags (OG, Twitter, SEO, canonical)
+- Sākumlapa izmanto Logo + Footer komponentus
+- Meistaru profilu lapas footer backlink uz ProMeistars
+- SMS šabloni rebrandoti ar ProMeistars parakstu
+- lib/email-templates.ts — welcome, published, trialEnding šabloni
+
+### ✅ Sprint 6F — Featured slots (TOP 5)
+- DB migrations 012 (full_profile) + 013 (featured_slots)
+  - featured, featured_lidz, featured_sakums, featured_beigas, featured_prioritate kolonnas
+  - featured_meistari VIEW
+- CRM edit: ⭐ checkbox + prioritāte (1–10) + sākuma/beigu datetime lauki
+- /api/public/featured — publisks endpoint portāla lapai
+- Sākumlapa: ⭐ TOP meistari sekcija (dzeltena, parādās ja ir featured)
+- /api/cron/featured-expire — auto-deaktivācija + SMS meistariem
+- vercel.json: dienas cron 02:00
 
 ## Nākamie uzdevumi (prioritāšu secībā)
 
