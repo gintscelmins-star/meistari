@@ -1,10 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import MeistariGrid from './MeistariGrid'
 import { Logo } from '@/components/Logo'
 import { Footer } from '@/components/Footer'
+
+type FeaturedMeistars = {
+  id: string
+  vards: string
+  uzvards: string
+  nodarbosanas: string | null
+  kategorijas: string[] | null
+  regions: string | null
+  demo_url: string | null
+  demo_slug: string | null
+  foto_hero: string | null
+  foto_profils: string | null
+  featured_prioritate: number | null
+}
 
 export type Valoda = 'lv' | 'ru'
 
@@ -23,6 +37,14 @@ const txt = {
 
 export default function HomePage() {
   const [valoda, setValoda] = useState<Valoda>('lv')
+  const [featured, setFeatured] = useState<FeaturedMeistars[]>([])
+
+  useEffect(() => {
+    fetch('/api/public/featured')
+      .then(r => r.json())
+      .then(d => setFeatured(d.featured ?? []))
+      .catch(() => {})
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -93,6 +115,52 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* TOP 5 Featured */}
+      {featured.length > 0 && (
+        <section className="py-12 bg-yellow-50 border-b border-yellow-100">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">⭐ TOP meistari</h2>
+              <span className="text-sm text-gray-500">Rekomendētie speciālisti</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {featured.slice(0, 5).map(m => {
+                const href = m.demo_slug ? `/meistari/${m.demo_slug}` : (m.demo_url ?? '#')
+                const spec = m.nodarbosanas || m.kategorijas?.[0] || ''
+                const regjons = m.regions?.split(',')[0]?.trim() ?? ''
+                const initiali = `${m.vards[0] ?? ''}${m.uzvards[0] ?? ''}`
+                return (
+                  <a key={m.id} href={href}
+                    className="bg-white rounded-xl p-4 hover:shadow-md transition relative border border-yellow-100">
+                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs px-2 py-0.5 rounded-full font-semibold">
+                      TOP
+                    </div>
+                    {m.foto_profils || m.foto_hero ? (
+                      <img src={(m.foto_profils ?? m.foto_hero)!}
+                        className="w-14 h-14 rounded-full mx-auto mb-3 object-cover" alt={m.vards} />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center mx-auto mb-3 text-lg font-bold">
+                        {initiali}
+                      </div>
+                    )}
+                    <h3 className="font-semibold text-center text-sm text-gray-900">
+                      {m.vards} {m.uzvards[0]}.
+                    </h3>
+                    {spec && <p className="text-xs text-gray-500 text-center mt-0.5">{spec}</p>}
+                    {regjons && <p className="text-xs text-gray-400 text-center mt-0.5">{regjons}</p>}
+                    <div className="flex items-center justify-center gap-0.5 mt-2">
+                      {[1,2,3,4,5].map(n => (
+                        <span key={n} className="text-yellow-400 text-xs">★</span>
+                      ))}
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Meistaru grid ar filtriem */}
       <MeistariGrid valoda={valoda} />

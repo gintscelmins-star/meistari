@@ -94,6 +94,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   if (body.featured_lidz !== undefined)
     update.featured_lidz = body.featured_lidz || null
+  if (body.featured_sakums !== undefined)
+    update.featured_sakums = body.featured_sakums || null
+  if (body.featured_prioritate !== undefined)
+    update.featured_prioritate = body.featured_prioritate ? Number(body.featured_prioritate) : 0
   if (body.kategorijas !== undefined)
     update.kategorijas = Array.isArray(body.kategorijas) ? body.kategorijas : null
   if (body.darba_laiki !== undefined)

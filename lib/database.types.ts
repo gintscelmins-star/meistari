@@ -153,6 +153,9 @@ export type Database = {
           kategorijas: string[] | null;
           featured: boolean | null;
           featured_lidz: string | null;
+          featured_sakums: string | null;
+          featured_beigas: string | null;
+          featured_prioritate: number | null;
           publiskets: boolean | null;
           publiskets_datums: string | null;
         }
@@ -191,6 +194,9 @@ export type Database = {
           kategorijas?: string[] | null;
           featured?: boolean | null;
           featured_lidz?: string | null;
+          featured_sakums?: string | null;
+          featured_beigas?: string | null;
+          featured_prioritate?: number | null;
           publiskets?: boolean | null;
           publiskets_datums?: string | null;
         }
@@ -229,6 +235,9 @@ export type Database = {
           kategorijas?: string[] | null;
           featured?: boolean | null;
           featured_lidz?: string | null;
+          featured_sakums?: string | null;
+          featured_beigas?: string | null;
+          featured_prioritate?: number | null;
           publiskets?: boolean | null;
           publiskets_datums?: string | null;
         }

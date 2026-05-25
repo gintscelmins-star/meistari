@@ -58,7 +58,8 @@ type MeistarsForm = {
   // S12
   meta_title: string; meta_description: string
   // S13
-  demo_slug: string; featured: boolean; featured_lidz: string; publiskets: boolean
+  demo_slug: string; featured: boolean; featured_lidz: string
+  featured_sakums: string; featured_prioritate: number; publiskets: boolean
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -189,7 +190,9 @@ export default function MeistarsEditPage() {
       meta_description: p.meta_description ?? '',
       demo_slug: p.demo_slug ?? '',
       featured: !!p.featured,
-      featured_lidz: p.featured_lidz ? p.featured_lidz.slice(0, 10) : '',
+      featured_lidz: p.featured_lidz ? p.featured_lidz.slice(0, 16) : '',
+      featured_sakums: p.featured_sakums ? p.featured_sakums.slice(0, 16) : '',
+      featured_prioritate: p.featured_prioritate ?? 5,
       publiskets: !!p.publiskets,
     })
 
@@ -497,6 +500,8 @@ export default function MeistarsEditPage() {
         cena_no: form.cena_no || null,
         cena_lidz: form.cena_lidz || null,
         featured_lidz: form.featured_lidz || null,
+        featured_sakums: form.featured_sakums || null,
+        featured_prioritate: form.featured_prioritate,
         pakalpojumi_detail: pakBody,
         atsauksmes: atsBody,
       }),
@@ -934,17 +939,41 @@ export default function MeistarsEditPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-6">
-              <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+            <div className="border border-yellow-200 rounded-xl p-4 bg-yellow-50">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.featured} onChange={e => set('featured', e.target.checked)}
-                  className="rounded text-blue-600" />
-                Rādīt TOP sarakstā (featured)
+                  className="rounded text-yellow-500" />
+                <span className="font-semibold text-gray-800">⭐ Rādīt TOP sarakstā</span>
               </label>
+
               {form.featured && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Featured līdz</label>
-                  <input type="date" value={form.featured_lidz} onChange={e => set('featured_lidz', e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <div className="ml-6 mt-3 space-y-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-600">Prioritāte (1–10, augstāks = augstāk)</label>
+                    <input type="number" min={1} max={10}
+                      value={form.featured_prioritate}
+                      onChange={e => set('featured_prioritate', Number(e.target.value))}
+                      className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-gray-600">Featured no</label>
+                      <input type="datetime-local" value={form.featured_sakums}
+                        onChange={e => set('featured_sakums', e.target.value)}
+                        className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-medium text-gray-600">Featured līdz</label>
+                      <input type="datetime-local" value={form.featured_lidz}
+                        onChange={e => set('featured_lidz', e.target.value)}
+                        className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-500">
+                    💡 Featured pozīcija maksā €10/nedēļa papildus subscription. Šobrīd billing nav aktīvs.
+                  </p>
                 </div>
               )}
             </div>

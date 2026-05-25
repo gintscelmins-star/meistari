@@ -11,6 +11,7 @@
     }
   ],
   "crons": [
-    { "path": "/api/gdpr/cleanup", "schedule": "0 2 1 * *" }
+    { "path": "/api/gdpr/cleanup", "schedule": "0 2 1 * *" },
+    { "path": "/api/cron/featured-expire", "schedule": "0 2 * * *" }
   ]
 }
