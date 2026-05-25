@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Wrench } from 'lucide-react'
 import MeistariGrid from './MeistariGrid'
+import { Logo } from '@/components/Logo'
+import { Footer } from '@/components/Footer'
 
 export type Valoda = 'lv' | 'ru'
 
@@ -28,13 +29,8 @@ export default function HomePage() {
 
       {/* Nav */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
-        <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-bold text-gray-900">
-            <span className="grid place-items-center h-8 w-8 rounded-md bg-blue-600 text-white">
-              <Wrench className="h-4 w-4" />
-            </span>
-            ProMeistars
-          </Link>
+        <div className="mx-auto max-w-7xl px-4 h-16 flex items-center justify-between">
+          <Logo />
 
           <div className="flex items-center gap-3">
             {/* Valodas toggle */}
@@ -54,7 +50,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/register"
-              className="inline-flex items-center rounded-full bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition-colors"
             >
               {txt.cta2[valoda]}
             </Link>
@@ -115,15 +111,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-100">
-        <div className="mx-auto max-w-6xl px-4 py-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-400">
-          <span>{txt.copy[valoda]}</span>
-          <Link href="/admin/login" className="hover:text-gray-600 transition-colors">
-            {txt.login[valoda]}
-          </Link>
-        </div>
-      </footer>
+      <Footer />
 
     </div>
   )

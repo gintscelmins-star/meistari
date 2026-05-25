@@ -489,12 +489,22 @@ export default function MeistarsProfils({
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-border">
-        <div className="mx-auto max-w-6xl px-4 py-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div>© 2025 Meistari.lv. Visas tiesības aizsargātas.</div>
-          <div className="flex items-center gap-6">
-            <Link href="/" className="hover:text-foreground transition">← Visi meistari</Link>
-          </div>
+      <footer className="bg-white border-t border-border mt-20">
+        <div className="mx-auto max-w-2xl px-4 py-8 text-center">
+          <p className="text-sm text-gray-600 mb-1">
+            Lapa izveidota ar{' '}
+            <a href="https://promeistars.lv" className="text-blue-600 hover:underline font-medium">
+              ProMeistars
+            </a>
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            <a href="/privacy" className="hover:underline">Privātums</a>
+            {' · '}
+            <a href="/terms" className="hover:underline">Noteikumi</a>
+            {' · '}
+            <a href="/" className="hover:underline">← Visi meistari</a>
+          </p>
+          <p className="text-xs text-gray-300 mt-1">© 2026 ProMeistars. Visas tiesības aizsargātas.</p>
         </div>
       </footer>
 

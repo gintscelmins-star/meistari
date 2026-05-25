@@ -170,10 +170,18 @@ export default function MeistaraLapa({ meistars }: { meistars: ProspectMeistars 
           </a>
         </section>
 
-        <div className="text-center">
-          <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">
-            ProMeistars.lv — Tavs profesionālais profils
-          </Link>
+        <div className="text-center border-t pt-4 mt-2">
+          <p className="text-xs text-gray-500 mb-1">
+            Lapa izveidota ar{' '}
+            <a href="https://promeistars.lv" className="text-blue-600 hover:underline font-medium">
+              ProMeistars
+            </a>
+          </p>
+          <p className="text-xs text-gray-300">
+            <a href="/privacy" className="hover:text-gray-500">Privātums</a>
+            {' · '}
+            <a href="/terms" className="hover:text-gray-500">Noteikumi</a>
+          </p>
         </div>
       </div>
     </div>
