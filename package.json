@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:sms": "vitest run __tests__/sms.test.ts",
+    "test:twilio-connection": "npx tsx lib/sms-testing.ts connection",
+    "test:webhook-simulate": "npx tsx lib/sms-testing.ts simulate +37120000001 Jā"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
@@ -27,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.7"
   }
 }

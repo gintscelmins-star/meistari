@@ -117,6 +117,12 @@ export type Database = {
         Update: { id?: string; prospect_id?: string; autors?: string; teksts?: string; vertejums?: number | null; datums?: string | null; created_at?: string | null }
         Relationships: [{ foreignKeyName: "prospect_atsauksmes_prospect_id_fkey"; columns: ["prospect_id"]; isOneToOne: false; referencedRelation: "prospects"; referencedColumns: ["id"] }]
       }
+      webhook_log: {
+        Row: { id: string; event_type: string; status: string; from_number: string | null; prospect_id: string | null; details: Record<string, unknown> | null; error_message: string | null; created_at: string }
+        Insert: { id?: string; event_type: string; status?: string; from_number?: string | null; prospect_id?: string | null; details?: Record<string, unknown> | null; error_message?: string | null; created_at?: string }
+        Update: { id?: string; event_type?: string; status?: string; from_number?: string | null; prospect_id?: string | null; details?: Record<string, unknown> | null; error_message?: string | null; created_at?: string }
+        Relationships: [{ foreignKeyName: "webhook_log_prospect_id_fkey"; columns: ["prospect_id"]; isOneToOne: false; referencedRelation: "prospects"; referencedColumns: ["id"] }]
+      }
       prospects: {
         Row: {
           id: string; vards: string; uzvards: string; telefons: string;

@@ -137,10 +137,24 @@ STOP pie: TypeScript error, build fail
 - /api/cron/featured-expire — auto-deaktivācija + SMS meistariem
 - vercel.json: dienas cron 02:00
 
+### ✅ Sprint 7 Day 1 — Twilio drošība + SMS sistēma
+- lib/twilio-verify.ts — X-Twilio-Signature HMAC-SHA1 verifikācija (verifyTwilioWebhook, generateTestSignature)
+- lib/twilio.ts — paplašināts: sendTwilioMessage, sendTwilioMessageBulk, normalizePhoneNumber, sendTemplateMessage, getTwilioInfo, retry (3x exponential backoff), 100ms rate limit
+- lib/webhook-logger.ts — logWebhookEvent, getWebhookLogs, cleanupOldWebhookLogs (GDPR 90d)
+- lib/sms-testing.ts — testSendSMS, testBulkSMS, simulateTwilioWebhook, testWebhookSignature, testTwilioConnection + CLI (npx tsx lib/sms-testing.ts)
+- app/api/crm/webhook/route.ts — pilna Twilio paraksta verifikācija (403 ja invalid), SKIP_TWILIO_VERIFY=true lokālai testēšanai, webhook logging
+- app/api/crm/webhook-logs/route.ts — GET (filtri: event_type, status, from) + DELETE (cleanup >90d)
+- app/crm/(protected)/webhook-logs/page.tsx — real-time dashboard (5s auto-refresh), stats, drošības brīdinājums par invalid signatures
+- DB migration 014_webhook_log.sql — webhook_log tabula ar indeksiem un RLS
+- __tests__/sms.test.ts — vitest unit testi: verifyTwilioWebhook, normalizePhone, isYesResponse regex
+- package.json: test:sms, test:twilio-connection, test:webhook-simulate skripti
+- ENV: SKIP_TWILIO_VERIFY=true (lokālai dev/testing caur .env.local)
+
 ## Nākamie uzdevumi (prioritāšu secībā)
 
-### 🔴 Kritisks — drošība
-- [ ] Twilio paraksta verifikācija webhook route (X-Twilio-Signature)
+### 🔴 Kritisks — biznesa
+- [ ] Stripe maksājumi — €19/mēn subscription (sākumlapa to sola bet nav)
+- [ ] Pilns funnel tests no galvas līdz beigām (SS.lv → SMS → Jā → anketa → profils)
 
 ### 🔴 Kritisks — biznesa
 - [ ] Stripe maksājumi — €19/mēn subscription (sākumlapa to sola bet nav)
